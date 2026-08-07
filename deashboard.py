@@ -78,6 +78,7 @@ Este site mostra os dados coletados de **Física** (nível de ruído em decibéi
 divididos em 5 áreas principais: **Teletubies, Acadêmico 1, Acadêmico 2, Biblioteca e Quadras**.
 
 feito com python, Streamlit, Pandas e Plotly.
+
 por Arthur Sartori Cavalcanti
 
 👉 **Como usar:**
