@@ -77,6 +77,9 @@ st.markdown("""
 Este site mostra os dados coletados de **Física** (nível de ruído em decibéis) e **Química** (temperatura em graus Celsius) 
 divididos em 5 áreas principais: **Teletubies, Acadêmico 1, Acadêmico 2, Biblioteca e Quadras**.
 
+feito com python, Streamlit, Pandas e Plotly.
+por Arthur Sartori Cavalcanti
+
 👉 **Como usar:**
 - Selecione um local específico abaixo para analisar a evolução no tempo ou escolha **"todos"** para comparar as áreas.
 - Passe o mouse ou o dedo por cima dos pontos nos gráficos para ver os detalhes da medição.
