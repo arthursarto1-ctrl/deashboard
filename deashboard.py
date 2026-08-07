@@ -11,8 +11,8 @@ df_quimica = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet
 # -------------------------
 # TRATAMENTO DOS DADOS
 # -------------------------
-df_fisica['LOCAL'] = df_fisica['LOCAL'].str.strip().str.lower()
-df_quimica['LOCAL'] = df_quimica['LOCAL'].str.strip().str.lower()
+df_fisica['LOCAL'] = df_fisica['LOCAL'].astype(str).str.strip().str.lower()
+df_quimica['LOCAL'] = df_quimica['LOCAL'].astype(str).str.strip().str.lower()
 
 # Física: separar DB
 df_fisica['DB MAX - MIN'] = df_fisica['DB MAX - MIN'].astype(str).str.replace('–', '-', regex=False)
@@ -23,26 +23,34 @@ df_fisica['DB_MIN'] = pd.to_numeric(df_fisica['DB_MIN'], errors='coerce')
 # Química: converter temperatura
 df_quimica['TEMPERATURA (°C)'] = pd.to_numeric(df_quimica['TEMPERATURA (°C)'], errors='coerce')
 
-# REMOÇÃO DE VALORES NULOS E ZEROS
-df_fisica = df_fisica[df_fisica['DB'].notna() & (df_fisica['DB'] != 0)]
-df_quimica = df_quimica[df_quimica['TEMPERATURA (°C)'].notna() & (df_quimica['TEMPERATURA (°C)'] != 0)]
+# REMOÇÃO DE VALORES NULOS E ZEROS NAS MEDIÇÕES
+df_fisica = df_fisica[df_fisica['DB'].notna() & (df_fisica['DB'] != 0)].copy()
+df_quimica = df_quimica[df_quimica['TEMPERATURA (°C)'].notna() & (df_quimica['TEMPERATURA (°C)'] != 0)].copy()
 
 # Tratamento centralizado de Data e Hora
 df_fisica['HORÁRIO'] = df_fisica['HORÁRIO'].astype(str).str.replace('00:00:00', '').str.strip()
 df_quimica['HORÁRIO'] = df_quimica['HORÁRIO'].astype(str).str.replace('00:00:00', '').str.strip()
 
+# Converter para datetime combinando Data e Horário
 df_fisica['DATA_HORA_DT'] = pd.to_datetime(
-    df_fisica['DATA'].astype(str) + ' ' + df_fisica['HORÁRIO'].astype(str),
+    df_fisica['DATA'].astype(str).str.strip() + ' ' + df_fisica['HORÁRIO'],
     dayfirst=True, errors='coerce'
 )
 df_quimica['DATA_HORA_DT'] = pd.to_datetime(
-    df_quimica['DATA'].astype(str) + ' ' + df_quimica['HORÁRIO'].astype(str),
+    df_quimica['DATA'].astype(str).str.strip() + ' ' + df_quimica['HORÁRIO'],
     dayfirst=True, errors='coerce'
 )
 
-# Formatação amigável das datas
+# REMOVER LINHAS COM DATAS INVÁLIDAS / NULAS
+df_fisica = df_fisica.dropna(subset=['DATA_HORA_DT']).copy()
+df_quimica = df_quimica.dropna(subset=['DATA_HORA_DT']).copy()
+
+# Recriar as colunas formatadas garantindo que não haverá 'null'
 df_fisica['DATA'] = df_fisica['DATA_HORA_DT'].dt.strftime('%d/%m/%Y')
+df_fisica['HORÁRIO'] = df_fisica['DATA_HORA_DT'].dt.strftime('%H:%M')
+
 df_quimica['DATA'] = df_quimica['DATA_HORA_DT'].dt.strftime('%d/%m/%Y')
+df_quimica['HORÁRIO'] = df_quimica['DATA_HORA_DT'].dt.strftime('%H:%M')
 
 # -------------------------
 # AGRUPAMENTO EM 5 ÁREAS
@@ -77,9 +85,9 @@ st.markdown("""
 Este site mostra os dados coletados de **Física** (nível de ruído em decibéis) e **Química** (temperatura em graus Celsius) 
 divididos em 5 áreas principais: **Teletubies, Acadêmico 1, Acadêmico 2, Biblioteca e Quadras**.
 
-feito com python, Streamlit, Pandas e Plotly.
+Feito com Python, Streamlit, Pandas e Plotly.
 
-por Arthur Sartori Cavalcanti
+Por Arthur Sartori Cavalcanti
 
 👉 **Como usar:**
 - Selecione um local específico abaixo para analisar a evolução no tempo ou escolha **"todos"** para comparar as áreas.
@@ -114,7 +122,7 @@ if local != "todos":
     col2.metric("Máximo (dB)", f"{max_fisica:.1f}" if pd.notna(max_fisica) else "N/A")
     col3.metric("Mínimo (dB)", f"{min_fisica:.1f}" if pd.notna(min_fisica) else "N/A")
 
-    df_area = df_local_fisica[df_local_fisica['DATA_HORA_DT'].notna()].sort_values('DATA_HORA_DT')
+    df_area = df_local_fisica.sort_values('DATA_HORA_DT')
     df_area['DATA_HORA_ROTULO'] = df_area['DATA_HORA_DT'].dt.strftime('%d/%m %H:%M')
     df_area_agrupado = df_area.groupby('DATA_HORA_ROTULO', sort=False, as_index=False)['DB'].mean()
 
@@ -144,7 +152,7 @@ if local != "todos":
     col2.metric("Máximo (°C)", f"{max_quimica:.1f}" if pd.notna(max_quimica) else "N/A")
     col3.metric("Mínimo (°C)", f"{min_quimica:.1f}" if pd.notna(min_quimica) else "N/A")
 
-    df_area_temp = df_local_quimica[df_local_quimica['DATA_HORA_DT'].notna()].sort_values('DATA_HORA_DT')
+    df_area_temp = df_local_quimica.sort_values('DATA_HORA_DT')
     df_area_temp['DATA_HORA_ROTULO'] = df_area_temp['DATA_HORA_DT'].dt.strftime('%d/%m %H:%M')
     df_temp_agrupado = df_area_temp.groupby('DATA_HORA_ROTULO', sort=False, as_index=False)['TEMPERATURA (°C)'].mean()
 
@@ -160,7 +168,7 @@ if local != "todos":
     st.plotly_chart(fig_linha_temp, use_container_width=True)
 
     # ---------------------------------------------------------
-    # ANÁLISE CONDICIONAL COM IF, ELIF E ELSE DENTRO DO IF LOCAL
+    # ANÁLISE CONDICIONAL DENTRO DO IF LOCAL
     # ---------------------------------------------------------
     st.subheader(f"📝 Análise Diagnóstica do Local — {local}")
 
@@ -183,7 +191,6 @@ if local != "todos":
         
         if dif_temp > 8:
             texto_temp = f"🔥 **Temperatura (Alta Variação - {dif_temp:.1f} °C):** A diferença entre a maior e a menor temperatura é **muito alta**. O ambiente sofre forte oscilação térmica ao longo do dia."
-            
         elif dif_temp >= 3:
             texto_temp = f"🌤️ **Temperatura (Variação Moderada - {dif_temp:.1f} °C):** A variação de temperatura é **mais ou menos aceitável**, acompanhando o clima natural sem mudanças abruptas."
         else:
