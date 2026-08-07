@@ -25,6 +25,12 @@ df_fisica['DB_MIN'] = pd.to_numeric(df_fisica['DB_MIN'], errors='coerce')
 df_quimica['TEMPERATURA (°C)'] = pd.to_numeric(df_quimica['TEMPERATURA (°C)'], errors='coerce')
 
 # -------------------------
+# REMOÇÃO DE VALORES NULOS E ZEROS
+# -------------------------
+df_fisica = df_fisica[df_fisica['DB'].notna() & (df_fisica['DB'] != 0)]
+df_quimica = df_quimica[df_quimica['TEMPERATURA (°C)'].notna() & (df_quimica['TEMPERATURA (°C)'] != 0)]
+
+# -------------------------
 # AGRUPAMENTO EM 5 ÁREAS
 # -------------------------
 def agrupar_local(local):
@@ -63,7 +69,7 @@ divididos em 5 áreas principais: **Teletubies, Acadêmico 1, Acadêmico 2, Bibl
 - Passe o **mouse** (computador) ou o **dedo** (celular/tablet) por cima das bolinhas para ver os detalhes da medição.
 - Cada bolinha representa um valor individual coletado.
 - As caixas (boxplot) mostram o resumo: mínimo, máximo, mediana e média.
-- as bolinhas/quadrados do lado do grafico servem para ocultar ou mostrar os dados de cada área.
+- As bolinhas/quadrados do lado do gráfico servem para ocultar ou mostrar os dados de cada área.
 """)
 
 # -------------------------
