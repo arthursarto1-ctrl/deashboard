@@ -225,7 +225,7 @@ else:
             "DB": ":.1f",
             "DATA": True,
             "HORÁRIO": True,
-            "LOCAL": True
+            "LOCAL": False
         }
     )
     fig_fisica.update_traces(boxmean="sd")
@@ -257,7 +257,7 @@ else:
             "TEMPERATURA (°C)": ":.1f",
             "DATA": True,
             "HORÁRIO": True,
-            "LOCAL": True
+            "LOCAL": False
         }
     )
     fig_quimica.update_traces(boxmean="sd")
