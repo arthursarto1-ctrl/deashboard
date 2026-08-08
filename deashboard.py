@@ -1,6 +1,18 @@
+import locale
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+
+# -------------------------
+# CONFIGURAÇÃO DE LOCALE (PORTUGUÊS - BRASIL)
+# -------------------------
+try:
+    locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
+except:
+    try:
+        locale.setlocale(locale.LC_TIME, "pt_BR")
+    except:
+        pass
 
 # -------------------------
 # LEITURA DOS DADOS
@@ -27,25 +39,36 @@ df_quimica['TEMPERATURA (°C)'] = pd.to_numeric(df_quimica['TEMPERATURA (°C)'],
 df_fisica = df_fisica[df_fisica['DB'].notna() & (df_fisica['DB'] != 0)].copy()
 df_quimica = df_quimica[df_quimica['TEMPERATURA (°C)'].notna() & (df_quimica['TEMPERATURA (°C)'] != 0)].copy()
 
-# Tratamento centralizado de Data e Hora
-df_fisica['HORÁRIO'] = df_fisica['HORÁRIO'].astype(str).str.replace('00:00:00', '').str.strip()
-df_quimica['HORÁRIO'] = df_quimica['HORÁRIO'].astype(str).str.replace('00:00:00', '').str.strip()
+# -------------------------
+# PROCESSAMENTO DE DATAS EM PADRÃO BRASILEIRO (DIA/MÊS/ANO)
+# -------------------------
+def processar_data_hora_br(df):
+    # Se a coluna já foi lida como Datetime pelo pandas
+    if pd.api.types.is_datetime64_any_dtype(df['DATA']):
+        data_dt = df['DATA']
+    else:
+        # Garante a interpretação estrita de DIA/MÊS/ANO (dayfirst=True)
+        data_dt = pd.to_datetime(df['DATA'], dayfirst=True, errors='coerce')
 
-# Converter para datetime combinando Data e Horário
-df_fisica['DATA_HORA_DT'] = pd.to_datetime(
-    df_fisica['DATA'].astype(str).str.strip() + ' ' + df_fisica['HORÁRIO'],
-    dayfirst=True, errors='coerce'
-)
-df_quimica['DATA_HORA_DT'] = pd.to_datetime(
-    df_quimica['DATA'].astype(str).str.strip() + ' ' + df_quimica['HORÁRIO'],
-    dayfirst=True, errors='coerce'
-)
+    # Trata e limpa a coluna de horário
+    horario_str = df['HORÁRIO'].astype(str).str.replace('00:00:00', '').str.strip()
+    horario_str = horario_str.apply(lambda x: x if len(x) >= 4 else '00:00')
 
-# REMOVER LINHAS COM DATAS INVÁLIDAS / NULAS
+    # Junta a Data tratada com o Horário
+    data_str = data_dt.dt.strftime('%Y-%m-%d')
+    data_hora_final = pd.to_datetime(data_str + ' ' + horario_str, errors='coerce')
+    
+    # Se por algum motivo o horário der falha, preserva ao menos a data
+    return data_hora_final.fillna(data_dt)
+
+df_fisica['DATA_HORA_DT'] = processar_data_hora_br(df_fisica)
+df_quimica['DATA_HORA_DT'] = processar_data_hora_br(df_quimica)
+
+# REMOVER APENAS LINHAS ONDE A DATA FOR NULA
 df_fisica = df_fisica.dropna(subset=['DATA_HORA_DT']).copy()
 df_quimica = df_quimica.dropna(subset=['DATA_HORA_DT']).copy()
 
-# Recriar as colunas formatadas
+# Recriar as colunas formatadas em Padrão Brasileiro (DD/MM/YYYY)
 df_fisica['DATA'] = df_fisica['DATA_HORA_DT'].dt.strftime('%d/%m/%Y')
 df_fisica['HORÁRIO'] = df_fisica['DATA_HORA_DT'].dt.strftime('%H:%M')
 
@@ -167,7 +190,7 @@ with st.expander("❓ Como usar este site? (Toque/Clique para abrir)"):
 
     ### 💻 No Computador:
     1. **📍 Seleção de Local:** O menu central permite filtrar rapidamente qualquer uma das 5 áreas ou visualizar a análise consolidada (`todos`).
-    2. **⚙️ Barra Lateral Fixa:** Utilize o painel da esquerda para aplicar filtros detalhados de período e limites de valores (dB e °C).
+    2. **⚙️ Barra Lateral Fixa:** Utilize o painel da esquerda para aplicar filtros detalhados de período (DD/MM/AAAA) e limites de valores (dB e °C).
     3. **📋 Visualização Dupla:** Alternar entre os gráficos analíticos e as tabelas completas de dados brutos de Física e Química no topo de cada matéria.
     4. **🖱️ Recursos do Gráfico:** Passe o mouse sobre as barras/pontos para ver detalhes. Use a barra de ferramentas do canto superior direito do gráfico para fazer zoom ou baixar a imagem.
     """)
@@ -234,7 +257,7 @@ with tab_fisica:
                     y="DB",
                     markers=True,
                     title=f"Ruído (dB) ao Longo do Tempo — {local}",
-                    labels={"DATA_HORA_ROTULO": "Dia e Horário", "DB": "Média de Ruído (dB)"}
+                    labels={"DATA_HORA_ROTULO": "Data e Horário", "DB": "Média de Ruído (dB)"}
                 )
                 fig_linha.update_xaxes(type='category')
                 st.plotly_chart(fig_linha, use_container_width=True)
@@ -280,6 +303,7 @@ with tab_fisica:
                 color="ÁREA",
                 title="Níveis de Ruído por Área",
                 points="all",
+                labels={"DB": "Ruído (dB)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário"},
                 hover_data={
                     "ÁREA": False,
                     "DB": ":.1f",
@@ -304,7 +328,7 @@ with tab_fisica:
             df_exibir_fisica = df_filtrado_fisica[['ÁREA', 'LOCAL', 'DATA', 'HORÁRIO', 'DB']].rename(columns={
                 'ÁREA': 'Área Agrupada',
                 'LOCAL': 'Local Específico',
-                'DATA': 'Data',
+                'DATA': 'Data (DD/MM/AAAA)',
                 'HORÁRIO': 'Horário',
                 'DB': 'Ruído (dB)'
             })
@@ -355,7 +379,7 @@ with tab_quimica:
                     y="TEMPERATURA (°C)",
                     markers=True,
                     title=f"Variação de Temperatura (°C) ao Longo do Tempo — {local}",
-                    labels={"DATA_HORA_ROTULO": "Dia e Horário", "TEMPERATURA (°C)": "Média de Temperatura (°C)"}
+                    labels={"DATA_HORA_ROTULO": "Data e Horário", "TEMPERATURA (°C)": "Média de Temperatura (°C)"}
                 )
                 fig_linha_temp.update_xaxes(type='category')
                 st.plotly_chart(fig_linha_temp, use_container_width=True)
@@ -402,6 +426,7 @@ with tab_quimica:
                 color="ÁREA",
                 title="Distribuição da Temperatura por Área",
                 points="all",
+                labels={"TEMPERATURA (°C)": "Temperatura (°C)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário"},
                 hover_data={
                     "ÁREA": False,
                     "TEMPERATURA (°C)": ":.1f",
@@ -426,7 +451,7 @@ with tab_quimica:
             df_exibir_quimica = df_filtrado_quimica[['ÁREA', 'LOCAL', 'DATA', 'HORÁRIO', 'TEMPERATURA (°C)']].rename(columns={
                 'ÁREA': 'Área Agrupada',
                 'LOCAL': 'Local Específico',
-                'DATA': 'Data',
+                'DATA': 'Data (DD/MM/AAAA)',
                 'HORÁRIO': 'Horário',
                 'TEMPERATURA (°C)': 'Temperatura (°C)'
             })
