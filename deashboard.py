@@ -3,112 +3,134 @@ import pandas as pd
 import plotly.express as px
 
 # -------------------------
-# CONFIGURAÇÃO DA PÁGINA
+# LEITURA DOS DADOS
+# -------------------------
+# Basta deixar o arquivo na mesma pasta do projeto
+df_fisica = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE FÍSICA - MOSTRA DE ART")
+df_quimica = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE QUÍMICA")
+
+# -------------------------
+# TRATAMENTO DOS DADOS
+# -------------------------
+df_fisica['LOCAL'] = df_fisica['LOCAL'].str.strip().str.lower()
+df_quimica['LOCAL'] = df_quimica['LOCAL'].str.strip().str.lower()
+
+# Física: separar DB
+df_fisica['DB MAX - MIN'] = df_fisica['DB MAX - MIN'].astype(str).str.replace('–','-', regex=False)
+df_fisica[['DB','DB_MIN']] = df_fisica['DB MAX - MIN'].str.split('-', expand=True)
+df_fisica['DB'] = pd.to_numeric(df_fisica['DB'], errors='coerce')
+df_fisica['DB_MIN'] = pd.to_numeric(df_fisica['DB_MIN'], errors='coerce')
+
+# Química: converter temperatura
+df_quimica['TEMPERATURA (°C)'] = pd.to_numeric(df_quimica['TEMPERATURA (°C)'], errors='coerce')
+
+# -------------------------
+# REMOÇÃO DE VALORES NULOS E ZEROS
+# -------------------------
+df_fisica = df_fisica[df_fisica['DB'].notna() & (df_fisica['DB'] != 0)]
+df_quimica = df_quimica[df_quimica['TEMPERATURA (°C)'].notna() & (df_quimica['TEMPERATURA (°C)'] != 0)]
+
+# -------------------------
+# AGRUPAMENTO EM 5 ÁREAS
+# -------------------------
+def agrupar_local(local):
+    if local in ["teletubbies","teletubies"]:
+        return "Teletubies"
+    elif local in ["acadêmico 1","ala a","ala b","ala c","ala d","ala e","ala f",
+                   "nasa","estacionamento","p1","sala de aula","p2","atrás da p2","dentro da p2"]:
+        return "Acadêmico 1"
+    elif local in ["acadêmico 2","ala g","ala h","ala i","ala j","ala k","ala l",
+                   "avião","vão entre os acadêmicos","saída acedmiccc","área do avião, acadêmico 2",
+                   "tratamento de água"]:
+        return "Acadêmico 2"
+    elif local in ["biblioteca","biblioteca (2º andar)","entrada principal","ponto de ônibus",
+                   "praça da biblioteca","perto do ponto de ônibus"]:
+        return "Biblioteca"
+    else:
+        return "Quadras"
+
+df_fisica['ÁREA'] = df_fisica['LOCAL'].apply(agrupar_local)
+df_quimica['ÁREA'] = df_quimica['LOCAL'].apply(agrupar_local)
+
+df_quimica['DATA_HORA'] = df_quimica['DATA'].astype(str) + " " + df_quimica['HORÁRIO'].astype(str)
+
+# -------------------------
+# DASHBOARD STREAMLIT
 # -------------------------
 st.set_page_config(page_title="Dados Senac Ciências 2CDD02", page_icon="📊", layout="wide")
 
-# -------------------------
-# LEITURA E TRATAMENTO
-# -------------------------
-@st.cache_data
-def carregar_dados():
-    df_f = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE FÍSICA - MOSTRA DE ART")
-    df_q = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE QUÍMICA")
-
-    df_f['LOCAL'] = df_f['LOCAL'].astype(str).str.strip().str.lower()
-    df_q['LOCAL'] = df_q['LOCAL'].astype(str).str.strip().str.lower()
-
-    # Física: separar DB
-    df_f['DB MAX - MIN'] = df_f['DB MAX - MIN'].astype(str).str.replace('–','-', regex=False)
-    df_f[['DB','DB_MIN']] = df_f['DB MAX - MIN'].str.split('-', expand=True)
-    df_f['DB'] = pd.to_numeric(df_f['DB'], errors='coerce')
-    df_f['DB_MIN'] = pd.to_numeric(df_f['DB_MIN'], errors='coerce')
-
-    # Química: converter temperatura
-    df_q['TEMPERATURA (°C)'] = pd.to_numeric(df_q['TEMPERATURA (°C)'], errors='coerce')
-
-    # Removendo nulos e zeros
-    df_f = df_f[df_f['DB'].notna() & (df_f['DB'] != 0)]
-    df_q = df_q[df_q['TEMPERATURA (°C)'].notna() & (df_q['TEMPERATURA (°C)'] != 0)]
-
-    def agrupar_local(local):
-        if local in ["teletubbies","teletubies"]:
-            return "Teletubies"
-        elif local in ["acadêmico 1","ala a","ala b","ala c","ala d","ala e","ala f",
-                       "nasa","estacionamento","p1","sala de aula","p2","atrás da p2","dentro da p2"]:
-            return "Acadêmico 1"
-        elif local in ["acadêmico 2","ala g","ala h","ala i","ala j","ala k","ala l",
-                       "avião","vão entre os acadêmicos","saída acedmiccc","área do avião, acadêmico 2",
-                       "tratamento de água"]:
-            return "Acadêmico 2"
-        elif local in ["biblioteca","biblioteca (2º andar)","entrada principal","ponto de ônibus",
-                       "praça da biblioteca","perto do ponto de ônibus"]:
-            return "Biblioteca"
-        else:
-            return "Quadras"
-
-    df_f['ÁREA'] = df_f['LOCAL'].apply(agrupar_local)
-    df_q['ÁREA'] = df_q['LOCAL'].apply(agrupar_local)
-    df_q['DATA_HORA'] = df_q['DATA'].astype(str) + " " + df_q['HORÁRIO'].astype(str)
-
-    return df_f, df_q
-
-df_fisica, df_quimica = carregar_dados()
-
-# -------------------------
-# FILTROS NA SIDEBAR
-# -------------------------
-st.sidebar.header("🔍 Filtros")
-todas_areas = sorted(list(set(df_fisica['ÁREA'].unique()).union(set(df_quimica['ÁREA'].unique()))))
-areas_selecionadas = st.sidebar.multiselect("Selecione as Áreas:", todas_areas, default=todas_areas)
-
-df_f_filtrado = df_fisica[df_fisica['ÁREA'].isin(areas_selecionadas)]
-df_q_filtrado = df_quimica[df_quimica['ÁREA'].isin(areas_selecionadas)]
-
-# -------------------------
-# CONTEÚDO PRINCIPAL
-# -------------------------
 st.title("📊 Dados Senac Ciências 2CDD02")
 
-tab_fisica, tab_quimica, tab_dados = st.tabs(["🎧 Física (Ruído)", "🌡️ Química (Temperatura)", "📄 Dados Brutos"])
+st.markdown("""
+Este site mostra os dados coletados de **Física** (nível de ruído em decibéis) e **Química** (temperatura em graus Celsius) 
+divididos em 5 áreas principais: **Teletubies, Acadêmico 1, Acadêmico 2, Biblioteca e Quadras**.
+
+👉 Como usar:
+- Passe o **mouse** (computador) ou o **dedo** (celular/tablet) por cima das bolinhas para ver os detalhes da medição.
+- Cada bolinha representa um valor individual coletado.
+- As caixas (boxplot) mostram o resumo: mínimo, máximo, mediana e média.
+- As bolinhas/quadrados do lado do gráfico servem para ocultar ou mostrar os dados de cada área.
+""")
 
 # -------------------------
-# ABA 1: FÍSICA
+# FÍSICA
 # -------------------------
-with tab_fisica:
-    st.subheader("Análise de Níveis de Ruído (dB)")
-    
-    if not df_f_filtrado.empty:
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Média", f"{df_f_filtrado['DB'].mean():.1f} dB")
-        col2.metric("Máximo", f"{df_f_filtrado['DB'].max():.1f} dB")
-        col3.metric("Mínimo", f"{df_f_filtrado['DB'].min():.1f} dB")
+st.subheader("🎧 Física - Ruído (dB)")
 
-        # Exibe gráfico de linha se houver apenas 1 área selecionada
-        if df_f_filtrado['ÁREA'].nunique() == 1:
-            area_nome = df_f_filtrado['ÁREA'].iloc[0]
-            fig_f = px.line(
-                df_f_filtrado.reset_index(drop=True),
-                y="DB",
-                markers=True,
-                title=f"Evolução Temporal do Ruído — {area_nome}",
-                labels={"index": "Nº da Medição", "DB": "Nível de Ruído (dB)"}
-            )
-        else:
-            fig_f = px.box(
-                df_f_filtrado, 
-                x="ÁREA", 
-                y="DB", 
-                color="ÁREA", 
-                points="all", 
-                title="Distribuição do Ruído por Área"
-            )
-            fig_f.update_traces(boxmean="sd")
+media_fisica = df_fisica['DB'].mean()
+max_fisica = df_fisica['DB'].max()
+min_fisica = df_fisica['DB'].min()
 
-        st.plotly_chart(fig_f, use_container_width=True)
-    else:
-        st.warning("Nenhum dado de Física disponível para os filtros selecionados.")
+col1, col2, col3 = st.columns(3)
+col1.metric("Média (dB)", f"{media_fisica:.1f}")
+col2.metric("Máximo (dB)", f"{max_fisica:.1f}")
+col3.metric("Mínimo (dB)", f"{min_fisica:.1f}")
 
+fig_fisica = px.box(
+    df_fisica,
+    x="ÁREA",
+    y="DB",
+    color="ÁREA",
+    title="Níveis de ruído por área",
+    points="all"   # mostra todas as bolinhas individuais
+)
+fig_fisica.update_traces(boxmean="sd")  # adiciona média e desvio padrão
+st.plotly_chart(fig_fisica, use_container_width=True)
+
+# -------------------------
+# QUÍMICA
+# -------------------------
+st.subheader("🌡️ Química - Temperatura (°C)")
+
+media_quimica = df_quimica['TEMPERATURA (°C)'].mean()
+max_quimica = df_quimica['TEMPERATURA (°C)'].max()
+min_quimica = df_quimica['TEMPERATURA (°C)'].min()
+
+col4, col5, col6 = st.columns(3)
+col4.metric("Média (°C)", f"{media_quimica:.1f}")
+col5.metric("Máximo (°C)", f"{max_quimica:.1f}")
+col6.metric("Mínimo (°C)", f"{min_quimica:.1f}")
+
+fig_quimica = px.scatter(
+    df_quimica,
+    x="DATA_HORA",
+    y="TEMPERATURA (°C)",
+    color="ÁREA",
+    title="Temperatura por dia/horário e área"
+)
+st.plotly_chart(fig_quimica, use_container_width=True)
+
+# -------------------------
+# ANÁLISE SIMPLES
+# -------------------------
+st.subheader("📈 Análises")
+st.markdown(f"""
+- **Física:** A média de ruído foi de **{media_fisica:.1f} dB**, com máximo de **{max_fisica:.1f} dB** e mínimo de **{min_fisica:.1f} dB**.  
+  Isso mostra quais áreas são mais barulhentas e quais são mais silenciosas.
+
+- **Química:** A média de temperatura foi de **{media_quimica:.1f} °C**, com máximo de **{max_quimica:.1f} °C** e mínimo de **{min_quimica:.1f} °C**.  
+  Assim é possível identificar os locais mais quentes e os mais frescos ao longo do dia.
+""")
 # -------------------------
 # ABA 2: QUÍMICA
 # -------------------------
