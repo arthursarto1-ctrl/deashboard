@@ -43,22 +43,17 @@ df_quimica = df_quimica[df_quimica['TEMPERATURA (°C)'].notna() & (df_quimica['T
 # PROCESSAMENTO DE DATAS EM PADRÃO BRASILEIRO (DIA/MÊS/ANO)
 # -------------------------
 def processar_data_hora_br(df):
-    # Se a coluna já foi lida como Datetime pelo pandas
     if pd.api.types.is_datetime64_any_dtype(df['DATA']):
         data_dt = df['DATA']
     else:
-        # Garante a interpretação estrita de DIA/MÊS/ANO (dayfirst=True)
         data_dt = pd.to_datetime(df['DATA'], dayfirst=True, errors='coerce')
 
-    # Trata e limpa a coluna de horário
     horario_str = df['HORÁRIO'].astype(str).str.replace('00:00:00', '').str.strip()
     horario_str = horario_str.apply(lambda x: x if len(x) >= 4 else '00:00')
 
-    # Junta a Data tratada com o Horário
     data_str = data_dt.dt.strftime('%Y-%m-%d')
     data_hora_final = pd.to_datetime(data_str + ' ' + horario_str, errors='coerce')
     
-    # Se por algum motivo o horário der falha, preserva ao menos a data
     return data_hora_final.fillna(data_dt)
 
 df_fisica['DATA_HORA_DT'] = processar_data_hora_br(df_fisica)
@@ -194,6 +189,45 @@ with st.expander("❓ Como usar este site? (Toque/Clique para abrir)"):
     3. **📋 Visualização Dupla:** Alternar entre os gráficos analíticos e as tabelas completas de dados brutos de Física e Química no topo de cada matéria.
     4. **🖱️ Recursos do Gráfico:** Passe o mouse sobre as barras/pontos para ver detalhes. Use a barra de ferramentas do canto superior direito do gráfico para fazer zoom ou baixar a imagem.
     """)
+
+st.write("---")
+
+# =========================================================
+# BLOCO DINÂMICO DE DESTAQUES (CÁLCULO AUTOMÁTICO DE EXTREMOS)
+# =========================================================
+st.markdown("### 🏆 Destaques Automáticos da Coleta")
+
+col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+
+# 1. Cálculos do local mais quente e mais gelado (Média por Área)
+if not df_quimica.empty:
+    temp_medias = df_quimica.groupby('ÁREA')['TEMPERATURA (°C)'].mean()
+    area_mais_quente = temp_medias.idxmax()
+    val_mais_quente = temp_medias.max()
+    
+    area_mais_gelada = temp_medias.idxmin()
+    val_mais_gelada = temp_medias.min()
+    
+    col_d1.metric("🔥 Lugar Mais Quente", f"{area_mais_quente}", f"{val_mais_quente:.1f} °C (Média)")
+    col_d2.metric("❄️ Lugar Mais Gelado", f"{area_mais_gelada}", f"{val_mais_gelada:.1f} °C (Média)")
+else:
+    col_d1.metric("🔥 Lugar Mais Quente", "Sem dados", "0.0 °C")
+    col_d2.metric("❄️ Lugar Mais Gelado", "Sem dados", "0.0 °C")
+
+# 2. Cálculos do local mais barulhento e mais silencioso (Média por Área)
+if not df_fisica.empty:
+    db_medias = df_fisica.groupby('ÁREA')['DB'].mean()
+    area_mais_barulhenta = db_medias.idxmax()
+    val_mais_barulhenta = db_medias.max()
+    
+    area_mais_silenciosa = db_medias.idxmin()
+    val_mais_silenciosa = db_medias.min()
+    
+    col_d3.metric("📢 Lugar Mais Barulhento", f"{area_mais_barulhenta}", f"{val_mais_barulhenta:.1f} dB (Média)")
+    col_d4.metric("🔇 Lugar Mais Silencioso", f"{area_mais_silenciosa}", f"{val_mais_silenciosa:.1f} dB (Média)")
+else:
+    col_d3.metric("📢 Lugar Mais Barulhento", "Sem dados", "0.0 dB")
+    col_d4.metric("🔇 Lugar Mais Silencioso", "Sem dados", "0.0 dB")
 
 st.write("---")
 
