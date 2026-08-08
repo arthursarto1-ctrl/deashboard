@@ -193,13 +193,14 @@ with st.expander("❓ Como usar este site? (Toque/Clique para abrir)"):
 st.write("---")
 
 # =========================================================
-# BLOCO DINÂMICO DE DESTAQUES (CÁLCULO AUTOMÁTICO DE EXTREMOS)
+# BLOCO DINÂMICO DE DESTAQUES AUTOMÁTICOS
 # =========================================================
 st.markdown("### 🏆 Destaques Automáticos da Coleta")
 
-col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+# TABELA 1: MÉDIAS POR ÁREA
+st.markdown("##### 📍 Médias por Área Agrupada")
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
-# 1. Cálculos do local mais quente e mais gelado (Média por Área)
 if not df_quimica.empty:
     temp_medias = df_quimica.groupby('ÁREA')['TEMPERATURA (°C)'].mean()
     area_mais_quente = temp_medias.idxmax()
@@ -208,13 +209,12 @@ if not df_quimica.empty:
     area_mais_gelada = temp_medias.idxmin()
     val_mais_gelada = temp_medias.min()
     
-    col_d1.metric("🔥 Lugar Mais Quente", f"{area_mais_quente}", f"{val_mais_quente:.1f} °C (Média)")
-    col_d2.metric("❄️ Lugar Mais Gelado", f"{area_mais_gelada}", f"{val_mais_gelada:.1f} °C (Média)")
+    col_m1.metric("🔥 Área Mais Quente", f"{area_mais_quente}", f"{val_mais_quente:.1f} °C (Média)")
+    col_m2.metric("❄️ Área Mais Gelada", f"{area_mais_gelada}", f"{val_mais_gelada:.1f} °C (Média)")
 else:
-    col_d1.metric("🔥 Lugar Mais Quente", "Sem dados", "0.0 °C")
-    col_d2.metric("❄️ Lugar Mais Gelado", "Sem dados", "0.0 °C")
+    col_m1.metric("🔥 Área Mais Quente", "Sem dados", "0.0 °C")
+    col_m2.metric("❄️ Área Mais Gelada", "Sem dados", "0.0 °C")
 
-# 2. Cálculos do local mais barulhento e mais silencioso (Média por Área)
 if not df_fisica.empty:
     db_medias = df_fisica.groupby('ÁREA')['DB'].mean()
     area_mais_barulhenta = db_medias.idxmax()
@@ -223,11 +223,53 @@ if not df_fisica.empty:
     area_mais_silenciosa = db_medias.idxmin()
     val_mais_silenciosa = db_medias.min()
     
-    col_d3.metric("📢 Lugar Mais Barulhento", f"{area_mais_barulhenta}", f"{val_mais_barulhenta:.1f} dB (Média)")
-    col_d4.metric("🔇 Lugar Mais Silencioso", f"{area_mais_silenciosa}", f"{val_mais_silenciosa:.1f} dB (Média)")
+    col_m3.metric("📢 Área Mais Barulhenta", f"{area_mais_barulhenta}", f"{val_mais_barulhenta:.1f} dB (Média)")
+    col_m4.metric("🔇 Área Mais Silenciosa", f"{area_mais_silenciosa}", f"{val_mais_silenciosa:.1f} dB (Média)")
 else:
-    col_d3.metric("📢 Lugar Mais Barulhento", "Sem dados", "0.0 dB")
-    col_d4.metric("🔇 Lugar Mais Silencioso", "Sem dados", "0.0 dB")
+    col_m3.metric("📢 Área Mais Barulhenta", "Sem dados", "0.0 dB")
+    col_m4.metric("🔇 Área Mais Silenciosa", "Sem dados", "0.0 dB")
+
+# TABELA 2: EXTREMOS ABSOLUTOS (RECORDES DE MEDIÇÕES)
+st.markdown("##### ⚡ Medições Extremas Registradas (Picos e Mínimos)")
+col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+
+if not df_quimica.empty:
+    # Maior temperatura registrada
+    idx_max_temp = df_quimica['TEMPERATURA (°C)'].idxmax()
+    row_max_temp = df_quimica.loc[idx_max_temp]
+    local_max_temp = row_max_temp['ÁREA']
+    val_ext_max_temp = row_max_temp['TEMPERATURA (°C)']
+    
+    # Menor temperatura registrada
+    idx_min_temp = df_quimica['TEMPERATURA (°C)'].idxmin()
+    row_min_temp = df_quimica.loc[idx_min_temp]
+    local_min_temp = row_min_temp['ÁREA']
+    val_ext_min_temp = row_min_temp['TEMPERATURA (°C)']
+
+    col_e1.metric("🌡️ Maior Temp. Absoluta", f"{local_max_temp}", f"{val_ext_max_temp:.1f} °C ({row_max_temp['DATA']})")
+    col_e2.metric("🧊 Menor Temp. Absoluta", f"{local_min_temp}", f"{val_ext_min_temp:.1f} °C ({row_min_temp['DATA']})")
+else:
+    col_e1.metric("🌡️ Maior Temp. Absoluta", "Sem dados", "0.0 °C")
+    col_e2.metric("🧊 Menor Temp. Absoluta", "Sem dados", "0.0 °C")
+
+if not df_fisica.empty:
+    # Maior ruído registrado
+    idx_max_db = df_fisica['DB'].idxmax()
+    row_max_db = df_fisica.loc[idx_max_db]
+    local_max_db = row_max_db['ÁREA']
+    val_ext_max_db = row_max_db['DB']
+
+    # Menor ruído registrado
+    idx_min_db = df_fisica['DB'].idxmin()
+    row_min_db = df_fisica.loc[idx_min_db]
+    local_min_db = row_min_db['ÁREA']
+    val_ext_min_db = row_min_db['DB']
+
+    col_e3.metric("🔊 Maior Pico de Som", f"{local_max_db}", f"{val_ext_max_db:.1f} dB ({row_max_db['DATA']})")
+    col_e4.metric("🔕 Menor Ruído Absoluto", f"{local_min_db}", f"{val_ext_min_db:.1f} dB ({row_min_db['DATA']})")
+else:
+    col_e3.metric("🔊 Maior Pico de Som", "Sem dados", "0.0 dB")
+    col_e4.metric("🔕 Menor Ruído Absoluto", "Sem dados", "0.0 dB")
 
 st.write("---")
 
