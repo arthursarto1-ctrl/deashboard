@@ -413,7 +413,7 @@ with tab_fisica:
                     "DB": ":.1f",
                     "DATA": True,
                     "HORÁRIO": True,
-                    "LOCAL": False
+                    "LOCAL": True
                 }
             )
             fig_fisica.update_traces(boxmean="sd")
@@ -484,6 +484,7 @@ with tab_quimica:
                     markers=True,
                     title=f"Variação de Temperatura (°C) ao Longo do Tempo — {local}",
                     labels={"DATA_HORA_ROTULO": "Data e Horário", "TEMPERATURA (°C)": "Média de Temperatura (°C)"}
+                    "LOCAL": True
                 )
                 fig_linha_temp.update_xaxes(type='category')
                 st.plotly_chart(fig_linha_temp, use_container_width=True)
@@ -536,7 +537,7 @@ with tab_quimica:
                     "TEMPERATURA (°C)": ":.1f",
                     "DATA": True,
                     "HORÁRIO": True,
-                    "LOCAL": False
+                    "LOCAL": True
                 }
             )
             fig_quimica.update_traces(boxmean="sd")
