@@ -257,7 +257,7 @@ else:
     col_m3.metric("📢 Área Mais Barulhenta", "Sem dados", "0.0 dB")
     col_m4.metric("🔇 Área Mais Silenciosa", "Sem dados", "0.0 dB")
 
-# TABELA 2: EXTREMOS ABSOLUTOS (RECORDES DE MEDIÇÕES)
+# TABELA 2: EXTREMOS ABSOLUTOS (RECORDES DE MEDIÇÕES MOSTRANDO O LOCAL EXATO)
 st.markdown("##### ⚡ Medições Extremas Registradas (Picos e Mínimos)")
 col_e1, col_e2, col_e3, col_e4 = st.columns(4)
 
@@ -265,17 +265,17 @@ if not df_quimica.empty:
     # Maior temperatura registrada
     idx_max_temp = df_quimica['TEMPERATURA (°C)'].idxmax()
     row_max_temp = df_quimica.loc[idx_max_temp]
-    local_max_temp = row_max_temp['ÁREA']
+    local_max_temp = str(row_max_temp['LOCAL']).title()
     val_ext_max_temp = row_max_temp['TEMPERATURA (°C)']
     
     # Menor temperatura registrada
     idx_min_temp = df_quimica['TEMPERATURA (°C)'].idxmin()
     row_min_temp = df_quimica.loc[idx_min_temp]
-    local_min_temp = row_min_temp['ÁREA']
+    local_min_temp = str(row_min_temp['LOCAL']).title()
     val_ext_min_temp = row_min_temp['TEMPERATURA (°C)']
 
-    col_e1.metric("🌡️ Maior Temp. Absoluta", f"{local_max_temp}", f"{val_ext_max_temp:.1f} °C ({row_max_temp['DATA']})")
-    col_e2.metric("🧊 Menor Temp. Absoluta", f"{local_min_temp}", f"{val_ext_min_temp:.1f} °C ({row_min_temp['DATA']})")
+    col_e1.metric("🌡️ Maior Temp. Absoluta", f"{local_max_temp} ({row_max_temp['ÁREA']})", f"{val_ext_max_temp:.1f} °C ({row_max_temp['DATA']})")
+    col_e2.metric("🧊 Menor Temp. Absoluta", f"{local_min_temp} ({row_min_temp['ÁREA']})", f"{val_ext_min_temp:.1f} °C ({row_min_temp['DATA']})")
 else:
     col_e1.metric("🌡️ Maior Temp. Absoluta", "Sem dados", "0.0 °C")
     col_e2.metric("🧊 Menor Temp. Absoluta", "Sem dados", "0.0 °C")
@@ -284,17 +284,17 @@ if not df_fisica.empty:
     # Maior ruído registrado
     idx_max_db = df_fisica['DB'].idxmax()
     row_max_db = df_fisica.loc[idx_max_db]
-    local_max_db = row_max_db['ÁREA']
+    local_max_db = str(row_max_db['LOCAL']).title()
     val_ext_max_db = row_max_db['DB']
 
     # Menor ruído registrado
     idx_min_db = df_fisica['DB'].idxmin()
     row_min_db = df_fisica.loc[idx_min_db]
-    local_min_db = row_min_db['ÁREA']
+    local_min_db = str(row_min_db['LOCAL']).title()
     val_ext_min_db = row_min_db['DB']
 
-    col_e3.metric("🔊 Maior Pico de Som", f"{local_max_db}", f"{val_ext_max_db:.1f} dB ({row_max_db['DATA']})")
-    col_e4.metric("🔕 Menor Ruído Absoluto", f"{local_min_db}", f"{val_ext_min_db:.1f} dB ({row_min_db['DATA']})")
+    col_e3.metric("🔊 Maior Pico de Som", f"{local_max_db} ({row_max_db['ÁREA']})", f"{val_ext_max_db:.1f} dB ({row_max_db['DATA']})")
+    col_e4.metric("🔕 Menor Ruído Absoluto", f"{local_min_db} ({row_min_db['ÁREA']})", f"{val_ext_min_db:.1f} dB ({row_min_db['DATA']})")
 else:
     col_e3.metric("🔊 Maior Pico de Som", "Sem dados", "0.0 dB")
     col_e4.metric("🔕 Menor Ruído Absoluto", "Sem dados", "0.0 dB")
@@ -307,7 +307,7 @@ st.write("---")
 st.markdown("### 📍 SELEÇÃO DE LOCAL")
 local = st.selectbox(
     "Escolha o local para visualizar as métricas e gráficos:",
-    ["todos", "Área 1", "Área 2", "Área 3", "Área 4", "Área 5","Área 6"],
+    ["todos", "Área 1", "Área 2", "Área 3", "Área 4", "Área 5", "Área 6"],
     index=0
 )
 
@@ -351,17 +351,17 @@ with tab_fisica:
                 c5.metric("Limite Inferior", f"{limite_inferior:.1f}")
                 c6.metric("Limite Superior", f"{limite_superior:.1f}")
 
-                df_area = df_local_fisica.sort_values('DATA_HORA_DT')
+                df_area = df_local_fisica.sort_values('DATA_HORA_DT').copy()
                 df_area['DATA_HORA_ROTULO'] = df_area['DATA_HORA_DT'].dt.strftime('%d/%m %H:%M')
-                df_area_agrupado = df_area.groupby('DATA_HORA_ROTULO', sort=False, as_index=False)['DB'].mean()
 
                 fig_linha = px.line(
-                    df_area_agrupado,
+                    df_area,
                     x="DATA_HORA_ROTULO",
                     y="DB",
                     markers=True,
                     title=f"Ruído (dB) ao Longo do Tempo — {local}",
-                    labels={"DATA_HORA_ROTULO": "Data e Horário", "DB": "Média de Ruído (dB)"}
+                    labels={"DATA_HORA_ROTULO": "Data e Horário", "DB": "Ruído (dB)", "LOCAL": "Local Exato"},
+                    hover_data={"LOCAL": True, "DATA_HORA_ROTULO": True, "DB": ":.1f"}
                 )
                 fig_linha.update_xaxes(type='category')
                 st.plotly_chart(fig_linha, use_container_width=True)
@@ -407,7 +407,7 @@ with tab_fisica:
                 color="ÁREA",
                 title="Níveis de Ruído por Área",
                 points="all",
-                labels={"DB": "Ruído (dB)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário"},
+                labels={"DB": "Ruído (dB)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário", "LOCAL": "Local Exato"},
                 hover_data={
                     "ÁREA": False,
                     "DB": ":.1f",
@@ -422,7 +422,7 @@ with tab_fisica:
             st.subheader("📈 Análise Geral de Ruído")
             st.markdown(f"""
             A média geral de ruído calculada para todos os pontos foi de **{media_fisica:.1f} dB**, com mediana de **{mediana_fisica:.1f} dB**.  
-            O gráfico acima permite comparar o nível de dispersão sonora entre cada uma das 5 áreas coletadas.
+            O gráfico acima permite comparar o nível de dispersão sonora entre cada uma das áreas coletadas.
             """)
 
     with subtab_dados_fisica:
@@ -473,18 +473,17 @@ with tab_quimica:
                 c5.metric("Limite Inferior", f"{limite_inferior_temp:.1f}")
                 c6.metric("Limite Superior", f"{limite_superior_temp:.1f}")
 
-                df_area_temp = df_local_quimica.sort_values('DATA_HORA_DT')
+                df_area_temp = df_local_quimica.sort_values('DATA_HORA_DT').copy()
                 df_area_temp['DATA_HORA_ROTULO'] = df_area_temp['DATA_HORA_DT'].dt.strftime('%d/%m %H:%M')
-                df_temp_agrupado = df_area_temp.groupby('DATA_HORA_ROTULO', sort=False, as_index=False)['TEMPERATURA (°C)'].mean()
 
                 fig_linha_temp = px.line(
-                    df_temp_agrupado,
+                    df_area_temp,
                     x="DATA_HORA_ROTULO",
                     y="TEMPERATURA (°C)",
                     markers=True,
                     title=f"Variação de Temperatura (°C) ao Longo do Tempo — {local}",
-                    labels={"DATA_HORA_ROTULO": "Data e Horário", "TEMPERATURA (°C)": "Média de Temperatura (°C)"}
-                    "LOCAL": True
+                    labels={"DATA_HORA_ROTULO": "Data e Horário", "TEMPERATURA (°C)": "Temperatura (°C)", "LOCAL": "Local Exato"},
+                    hover_data={"LOCAL": True, "DATA_HORA_ROTULO": True, "TEMPERATURA (°C)": ":.1f"}
                 )
                 fig_linha_temp.update_xaxes(type='category')
                 st.plotly_chart(fig_linha_temp, use_container_width=True)
@@ -531,7 +530,7 @@ with tab_quimica:
                 color="ÁREA",
                 title="Distribuição da Temperatura por Área",
                 points="all",
-                labels={"TEMPERATURA (°C)": "Temperatura (°C)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário"},
+                labels={"TEMPERATURA (°C)": "Temperatura (°C)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário", "LOCAL": "Local Exato"},
                 hover_data={
                     "ÁREA": False,
                     "TEMPERATURA (°C)": ":.1f",
