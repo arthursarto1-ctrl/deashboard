@@ -74,20 +74,48 @@ df_quimica['HORÁRIO'] = df_quimica['DATA_HORA_DT'].dt.strftime('%H:%M')
 # AGRUPAMENTO EM 5 ÁREAS
 # -------------------------
 def agrupar_local(local_nome):
-    if local_nome in ["teletubbies", "teletubies"]:
-        return "Teletubies"
-    elif local_nome in ["acadêmico 1", "ala a", "ala b", "ala c", "ala d", "ala e", "ala f",
-                        "nasa", "estacionamento", "p1", "sala de aula", "p2", "atrás da p2", "dentro da p2"]:
-        return "Acadêmico 1"
-    elif local_nome in ["acadêmico 2", "ala g", "ala h", "ala i", "ala j", "ala k", "ala l",
-                        "avião", "vão entre os acadêmicos", "saída acedmiccc", "área do avião, acadêmico 2",
-                        "tratamento de água"]:
-        return "Acadêmico 2"
-    elif local_nome in ["biblioteca", "biblioteca (2º andar)", "entrada principal", "ponto de ônibus",
-                        "praça da biblioteca", "perto do ponto de ônibus"]:
-        return "Biblioteca"
+    if local_nome in [
+        "p1", "biblioteca", "biblioteca (2º andar)", "biblioteca (segundo andar)", 
+        "praça", "praça da biblioteca", "praça no meio"
+    ]:
+        return "Área 1"
+    
+    elif local_nome in [
+        "acadêmico 1", "ala a", "ala b", "ala c", "ala g", "ala i", "nasa", "sala de aula"
+    ]:
+        return "Área 2"
+    
+    elif local_nome in [
+        "acadêmico 2", "ala k, acadêmico 2", "avião", "prédio de design", "prédio de dising", 
+        "vão entre os acadêmicos", "área do avião, acadêmico 2"
+    ]:
+        return "Área 3"
+    
+    elif local_nome in [
+        "frente da academia", "atrás da p2", "atrás do auditório", "dentro da p2", 
+        "dentro da quadra", "dentro do auditório", "centro de convenções", "frente do centro de convenções", 
+        "hall quadras", "p2", "parte de trás da quadra", "prédio das quadras internas", 
+        "prédio quadras internas", "quadras abertas", "quadras externas", 
+        "quadras externas e sala de aula", "quadras internas", "área 6 e 8 (quadras)", "perto da quadra interna"
+    ]:
+        return "Área 4"
+    
+    elif local_nome in [
+        "p3", "atrás da p3", "teletubbies", "teletubies", "tratamento de água", 
+        "teletubbies e região do senac", "estufa (8)", "lado de fora"
+    ]:
+        return "Área 5"
+    
+    elif local_nome in [
+        "estacionamento", "estacionamento e arredores", "estacionamento externo (área toda)", 
+        "estacionamento frontal", "estacionamento lateral", "entrada principal", 
+        "frente do auditório", "frente auditorio", "ponto de ônibus", "perto do ponto de ônibus", 
+        "perto ponto de onibus", "saída acedmiccc"
+    ]:
+        return "Área 6"
+    
     else:
-        return "Quadras"
+        return "outros"
 
 df_fisica['ÁREA'] = df_fisica['LOCAL'].apply(agrupar_local)
 df_quimica['ÁREA'] = df_quimica['LOCAL'].apply(agrupar_local)
@@ -279,7 +307,7 @@ st.write("---")
 st.markdown("### 📍 SELEÇÃO DE LOCAL")
 local = st.selectbox(
     "Escolha o local para visualizar as métricas e gráficos:",
-    ["todos", "Teletubies", "Acadêmico 1", "Acadêmico 2", "Biblioteca", "Quadras"],
+    ["todos", "Área 1", "Área 2", "Área 3", "Área 4", "Área 5","Área 6"],
     index=0
 )
 
