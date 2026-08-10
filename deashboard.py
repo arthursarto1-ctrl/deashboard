@@ -86,7 +86,7 @@ def agrupar_local(local_nome):
         return "Área 2"
     
     elif local_nome in [
-        "acadêmico 2", "ala k, acadêmico 2", "avião", "prédio de design", "prédio de dising", 
+        "acadêmico 2", "ala k", "ala k, acadêmico 2", "avião", "prédio de design", "prédio de dising", 
         "vão entre os acadêmicos", "área do avião, acadêmico 2"
     ]:
         return "Área 3"
@@ -115,7 +115,7 @@ def agrupar_local(local_nome):
         return "Área 6"
     
     else:
-        return "outros"
+        return "Área 7"
 
 df_fisica['ÁREA'] = df_fisica['LOCAL'].apply(agrupar_local)
 df_quimica['ÁREA'] = df_quimica['LOCAL'].apply(agrupar_local)
