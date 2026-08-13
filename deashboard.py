@@ -2,6 +2,8 @@ import locale
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from PIL import Image
 
 # -------------------------
 # CONFIGURAÇÃO DE LOCALE (PORTUGUÊS - BRASIL)
@@ -15,10 +17,34 @@ except:
         pass
 
 # -------------------------
+# ORDEM DAS ÁREAS E PALETA DE CORES PERSONALIZADA
+# -------------------------
+ORDEM_AREAS = ["Área 1", "Área 2", "Área 3", "Área 4", "Área 5", "Área 6", "Área 7"]
+
+CORES_AREAS = {
+    "Área 1": "#FF69B4",  # Rosa
+    "Área 2": "#FF7F00",  # Laranja
+    "Área 3": "#E41A1C",  # Vermelho
+    "Área 4": "#FFD700",  # Amarelo
+    "Área 5": "#4DAF4A",  # Verde
+    "Área 6": "#377EB8",  # Azul
+    "Área 7": "#999999"   # Cinza (Outros)
+}
+
+# -------------------------
 # LEITURA DOS DADOS
 # -------------------------
-df_fisica = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE FÍSICA - MOSTRA DE ART")
-df_quimica = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE QUÍMICA")
+@st.cache_data
+def carregar_dados():
+    df_f = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE FÍSICA - MOSTRA DE ART")
+    df_q = pd.read_excel("DADOS DE FÍSICA - MOSTRA DE ARTES 2026.xlsx", sheet_name="DADOS DE QUÍMICA")
+    return df_f, df_q
+
+try:
+    df_fisica, df_quimica = carregar_dados()
+except Exception as e:
+    st.error(f"Erro ao carregar o arquivo Excel: {e}")
+    st.stop()
 
 # -------------------------
 # TRATAMENTO DOS DADOS
@@ -120,6 +146,10 @@ def agrupar_local(local_nome):
 df_fisica['ÁREA'] = df_fisica['LOCAL'].apply(agrupar_local)
 df_quimica['ÁREA'] = df_quimica['LOCAL'].apply(agrupar_local)
 
+# FORÇANDO A ORDENAÇÃO CATEGÓRICA DE ÁREA 1 A ÁREA 7 NO PANDAS
+df_fisica['ÁREA'] = pd.Categorical(df_fisica['ÁREA'], categories=ORDEM_AREAS, ordered=True)
+df_quimica['ÁREA'] = pd.Categorical(df_quimica['ÁREA'], categories=ORDEM_AREAS, ordered=True)
+
 # -------------------------
 # CONFIGURAÇÃO DA PÁGINA
 # -------------------------
@@ -196,14 +226,13 @@ divididos em áreas do campus.
 Feito com Python, Streamlit, Pandas e Plotly.  
 Por Arthur Sartori Cavalcanti
 """)
-
 # =========================================================
 # GUIA DE USO (CELULAR E COMPUTADOR)
 # =========================================================
 with st.expander("❓ Como usar este site? (Toque/Clique para abrir)"):
     st.markdown("""
     ### 📱 No Celular:
-    1. **📍 Selecionar Local:** Use a caixa **"SELEÇÃO DE LOCAL"** para escolher entre a visão geral (`todos`) ou uma área específica.
+    1. **📍 Selecionar Local:** Use a caixa **"SELEÇÃO DE LOCAL"** ou veja o mapa interativo para escolher uma área.
     2. **⚙️ Filtros:** Toque na seta **`>`** no canto superior esquerdo para filtrar por datas e intervalos de valores.
     3. **🎧 Navegação por Matéria:** Escolha entre as abas principais **Física (Ruído)** e **Química (Temperatura)**.
     4. **📊 Troca de Visão:** Em cada matéria, use as abas **"📊 Gráficos e Métricas"** ou **"📋 Tabela de Dados Brutos"**.
@@ -212,11 +241,175 @@ with st.expander("❓ Como usar este site? (Toque/Clique para abrir)"):
     ---
 
     ### 💻 No Computador:
-    1. **📍 Seleção de Local:** O menu central permite filtrar rapidamente qualquer uma das áreas ou visualizar a análise consolidada (`todos`).
+    1. **📍 Seleção de Local:** O menu central e o mapa interativo permitem filtrar rapidamente qualquer uma das áreas ou visualizar a análise consolidada (`todos`).
     2. **⚙️ Barra Lateral Fixa:** Utilize o painel da esquerda para aplicar filtros detalhados de período (DD/MM/AAAA) e limites de valores (dB e °C).
     3. **📋 Visualização Dupla:** Alternar entre os gráficos analíticos e as tabelas completas de dados brutos de Física e Química no topo de cada matéria.
-    4. **🖱️ Recursos do Gráfico:** Passe o mouse sobre as barras/pontos para ver detalhes. Use a barra de ferramentas do canto superior direito do gráfico para fazer zoom ou baixar a imagem.
+    4. **🖱️ Recursos do Gráfico:** Passe o mouse sobre as barras/pontos para ver detalhes.
     """)
+
+st.write("---")
+
+# =========================================================
+# MAPA INTERATIVO DO CAMPUS
+# =========================================================
+st.markdown("### 🗺️ Mapa Interativo do Campus (Visão Aérea)")
+
+try:
+    map_img = Image.open("foto senac de cima.png")
+    img_width, img_height = map_img.size
+
+    fig_map = go.Figure()
+
+    fig_map.add_layout_image(
+        dict(
+            source=map_img,
+            xref="x",
+            yref="y",
+            x=0,
+            y=img_height,
+            sizex=img_width,
+            sizey=img_height,
+            sizing="contain",
+            opacity=1,
+            layer="below"
+        )
+    )
+
+    areas_coords = {
+         # Área 1 (Rosa - Canto inferior esquerdo)
+         "Área 1": {
+             "x": [0, 0.227 * img_width, 0.227 * img_width, 0],
+             "y": [0.536 * img_height, 0.536 * img_height, img_height, img_height],
+             "color": CORES_AREAS["Área 1"],
+             "label": "A1: Biblioteca e P1"
+         },
+         
+         # Área 2 (Laranja - Bloco inferior + brazo vertical à esquerda do a3)
+         "Área 2": {
+             "x": [
+                 0.227 * img_width, 
+                 0.308 * img_width, 
+                 0.308 * img_width, 
+                 0.667 * img_width, 
+                 0.667 * img_width, 
+                 0.227 * img_width
+             ],
+             "y": [
+                 0.383 * img_height, 
+                 0.383 * img_height, 
+                 0.611 * img_height, 
+                 0.611 * img_height, 
+                 0.838 * img_height, 
+                 0.838 * img_height
+             ],
+             "color": CORES_AREAS["Área 2"],
+             "label": "A2: Acadêmico 1"
+         },
+         
+         # Área 3 (Vermelho - Bloco central com recuo no canto inferior direito)
+         "Área 3": {
+             "x": [
+                 0.308 * img_width, 
+                 0.721 * img_width, 
+                 0.721 * img_width, 
+                 0.667 * img_width, 
+                 0.667 * img_width, 
+                 0.308 * img_width
+             ],
+             "y": [
+                 0.383 * img_height, 
+                 0.383 * img_height, 
+                 0.575 * img_height, 
+                 0.575 * img_height, 
+                 0.611 * img_height, 
+                 0.611 * img_height
+             ],
+             "color": CORES_AREAS["Área 3"],
+             "label": "A3: Acadêmico 2"
+         },
+         
+         # Área 4 (Amarelo - Lado direito: Quadras + encaixe abaixo do a3)
+         "Área 4": {
+             "x": [
+                 0.721 * img_width, 
+                 img_width, 
+                 img_width, 
+                 0.667 * img_width, 
+                 0.667 * img_width, 
+                 0.721 * img_width
+             ],
+             "y": [
+                 0, 
+                 0, 
+                 0.838 * img_height, 
+                 0.838 * img_height, 
+                 0.575 * img_height, 
+                 0.575 * img_height
+             ],
+             "color": CORES_AREAS["Área 4"],
+             "label": "A4: Quadras,academias,centro de convenções"
+         },
+         
+         # Área 5 (Verde - Canto superior esquerdo em L)
+         "Área 5": {
+             "x": [
+                 0, 
+                 0.721 * img_width, 
+                 0.721 * img_width, 
+                 0.227 * img_width, 
+                 0.227 * img_width, 
+                 0
+             ],
+             "y": [
+                 0, 
+                 0, 
+                 0.383 * img_height, 
+                 0.383 * img_height, 
+                 0.536 * img_height, 
+                 0.536 * img_height
+             ],
+             "color": CORES_AREAS["Área 5"],
+             "label": "A5: Teletubbies e P3"
+         },
+         
+         # Área 6 (Azul Escuro - Faixa inferior de fora a fora à direita)
+         "Área 6": {
+             "x": [0.227 * img_width, img_width, img_width, 0.227 * img_width],
+             "y": [0.838 * img_height, 0.838 * img_height, img_height, img_height],
+             "color": CORES_AREAS["Área 6"],
+             "label": "A6: Estacionamento e Entrada"
+         }
+     }
+
+    for area_key, data in areas_coords.items():
+        y_plotly = [img_height - y for y in data["y"]]
+        
+        fig_map.add_trace(go.Scatter(
+            x=data["x"],
+            y=y_plotly,
+            fill="toself",
+            fillcolor=data["color"],
+            opacity=0.35,
+            line=dict(color=data["color"], width=3),
+            name=area_key,
+            hoverinfo="text",
+            text=f"<b>{area_key}</b><br>{data['label']}"
+        ))
+
+    fig_map.update_xaxes(visible=False, range=[0, img_width])
+    fig_map.update_yaxes(visible=False, range=[0, img_height], scaleanchor="x", scaleratio=1)
+    
+    fig_map.update_layout(
+        title="<b>Passe o mouse ou toque sobre as regiões para identificar cada Área</b>",
+        margin=dict(l=0, r=0, t=40, b=0),
+        height=550,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
+    )
+
+    st.plotly_chart(fig_map, use_container_width=True)
+
+except Exception as e:
+    st.info("💡 Coloque a imagem 'foto senac de cima.png' na mesma pasta do código para exibir o mapa interativo sobreposto.")
 
 st.write("---")
 
@@ -230,7 +423,7 @@ st.markdown("##### 📍 Médias por Área Agrupada")
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 if not df_quimica.empty:
-    temp_medias = df_quimica.groupby('ÁREA')['TEMPERATURA (°C)'].mean()
+    temp_medias = df_quimica.groupby('ÁREA', observed=False)['TEMPERATURA (°C)'].mean()
     area_mais_quente = temp_medias.idxmax()
     val_mais_quente = temp_medias.max()
     
@@ -244,7 +437,7 @@ else:
     col_m2.metric("❄️ Área Mais Gelada", "Sem dados", "0.0 °C")
 
 if not df_fisica.empty:
-    db_medias = df_fisica.groupby('ÁREA')['DB'].mean()
+    db_medias = df_fisica.groupby('ÁREA', observed=False)['DB'].mean()
     area_mais_barulhenta = db_medias.idxmax()
     val_mais_barulhenta = db_medias.max()
     
@@ -257,17 +450,15 @@ else:
     col_m3.metric("📢 Área Mais Barulhenta", "Sem dados", "0.0 dB")
     col_m4.metric("🔇 Área Mais Silenciosa", "Sem dados", "0.0 dB")
 
-# TABELA 2: EXTREMOS ABSOLUTOS (RECORDES DE MEDIÇÕES MOSTRANDO APENAS A ÁREA)
+# TABELA 2: EXTREMOS ABSOLUTOS
 st.markdown("##### ⚡ Medições Extremas Registradas (Picos e Mínimos)")
 col_e1, col_e2, col_e3, col_e4 = st.columns(4)
 
 if not df_quimica.empty:
-    # Maior temperatura registrada
     idx_max_temp = df_quimica['TEMPERATURA (°C)'].idxmax()
     row_max_temp = df_quimica.loc[idx_max_temp]
     val_ext_max_temp = row_max_temp['TEMPERATURA (°C)']
     
-    # Menor temperatura registrada
     idx_min_temp = df_quimica['TEMPERATURA (°C)'].idxmin()
     row_min_temp = df_quimica.loc[idx_min_temp]
     val_ext_min_temp = row_min_temp['TEMPERATURA (°C)']
@@ -279,12 +470,10 @@ else:
     col_e2.metric("🧊 Menor Temp. Absoluta", "Sem dados", "0.0 °C")
 
 if not df_fisica.empty:
-    # Maior ruído registrado
     idx_max_db = df_fisica['DB'].idxmax()
     row_max_db = df_fisica.loc[idx_max_db]
     val_ext_max_db = row_max_db['DB']
 
-    # Menor ruído registrado
     idx_min_db = df_fisica['DB'].idxmin()
     row_min_db = df_fisica.loc[idx_min_db]
     val_ext_min_db = row_min_db['DB']
@@ -350,6 +539,8 @@ with tab_fisica:
                 df_area = df_local_fisica.sort_values('DATA_HORA_DT').copy()
                 df_area['DATA_HORA_ROTULO'] = df_area['DATA_HORA_DT'].dt.strftime('%d/%m %H:%M')
 
+                cor_area_sel = CORES_AREAS.get(local, "#3366CC")
+
                 fig_linha = px.line(
                     df_area,
                     x="DATA_HORA_ROTULO",
@@ -359,6 +550,7 @@ with tab_fisica:
                     labels={"DATA_HORA_ROTULO": "Data e Horário", "DB": "Ruído (dB)", "LOCAL": "Local Exato"},
                     hover_data={"LOCAL": True, "DATA_HORA_ROTULO": True, "DB": ":.1f"}
                 )
+                fig_linha.update_traces(line_color=cor_area_sel, marker=dict(color=cor_area_sel, size=8))
                 fig_linha.update_xaxes(type='category')
                 st.plotly_chart(fig_linha, use_container_width=True)
 
@@ -401,6 +593,8 @@ with tab_fisica:
                 x="ÁREA",
                 y="DB",
                 color="ÁREA",
+                category_orders={"ÁREA": ORDEM_AREAS},
+                color_discrete_map=CORES_AREAS,
                 title="Níveis de Ruído por Área",
                 points="all",
                 labels={"DB": "Ruído (dB)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário", "LOCAL": "Local Exato"},
@@ -472,6 +666,8 @@ with tab_quimica:
                 df_area_temp = df_local_quimica.sort_values('DATA_HORA_DT').copy()
                 df_area_temp['DATA_HORA_ROTULO'] = df_area_temp['DATA_HORA_DT'].dt.strftime('%d/%m %H:%M')
 
+                cor_area_sel = CORES_AREAS.get(local, "#3366CC")
+
                 fig_linha_temp = px.line(
                     df_area_temp,
                     x="DATA_HORA_ROTULO",
@@ -481,6 +677,7 @@ with tab_quimica:
                     labels={"DATA_HORA_ROTULO": "Data e Horário", "TEMPERATURA (°C)": "Temperatura (°C)", "LOCAL": "Local Exato"},
                     hover_data={"LOCAL": True, "DATA_HORA_ROTULO": True, "TEMPERATURA (°C)": ":.1f"}
                 )
+                fig_linha_temp.update_traces(line_color=cor_area_sel, marker=dict(color=cor_area_sel, size=8))
                 fig_linha_temp.update_xaxes(type='category')
                 st.plotly_chart(fig_linha_temp, use_container_width=True)
 
@@ -524,6 +721,8 @@ with tab_quimica:
                 x="ÁREA",
                 y="TEMPERATURA (°C)",
                 color="ÁREA",
+                category_orders={"ÁREA": ORDEM_AREAS},
+                color_discrete_map=CORES_AREAS,
                 title="Distribuição da Temperatura por Área",
                 points="all",
                 labels={"TEMPERATURA (°C)": "Temperatura (°C)", "DATA": "Data (DD/MM/AAAA)", "HORÁRIO": "Horário", "LOCAL": "Local Exato"},
