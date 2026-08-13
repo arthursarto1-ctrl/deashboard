@@ -23,8 +23,8 @@ ORDEM_AREAS = ["Área 1", "Área 2", "Área 3", "Área 4", "Área 5", "Área 6",
 
 CORES_AREAS = {
     "Área 1": "#FF69B4",  # Rosa
-    "Área 2": "#FF7F00",  # Laranja
-    "Área 3": "#E41A1C",  # Vermelho
+    "Área 2": "#E41A1C",  # Vermelho
+    "Área 3": "#FF7F00",  # Laranja
     "Área 4": "#FFD700",  # Amarelo
     "Área 5": "#4DAF4A",  # Verde
     "Área 6": "#377EB8",  # Azul
