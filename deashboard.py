@@ -701,4 +701,165 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         color='ÁREA',
         points='all',
         title=titulo,
-        labels={col_valo
+        color_discrete_map=CORES_AREAS,
+        template='plotly_dark',
+    )
+    fig.update_traces(boxmean='sd')
+
+  # 4. BARRAS
+  else:
+    df_bar = (
+        df_plot.groupby('ÁREA', observed=False)[col_valor].mean().reset_index()
+    )
+    fig = px.bar(
+        df_bar,
+        x='ÁREA',
+        y=col_valor,
+        color='ÁREA',
+        text_auto='.1f',
+        title=f'Média de {label_valor} por Área',
+        labels={col_valor: f'Média de {label_valor}'},
+        color_discrete_map=CORES_AREAS,
+        template='plotly_dark',
+    )
+
+  fig.update_layout(
+      margin=dict(l=20, r=20, t=50, b=30),
+      height=500 if not is_facet else 650,
+      hovermode='closest' if is_facet else 'x unified',
+      legend=dict(
+          orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5
+      ),
+  )
+
+  if tipo_grafico in [
+      '📈 Linha (Evolução Temporal)',
+      '📍 Dispersão (Pontos/Scatter)',
+  ]:
+    fig.update_xaxes(
+        tickformat='%d/%m', showgrid=True, gridwidth=0.1, dtick='86400000.0'
+    )
+
+  return fig
+
+
+# =========================================================
+# 5. ABAS DA MATÉRIA (FÍSICA OU QUÍMICA)
+# =========================================================
+tab_fisica, tab_quimica = st.tabs(
+    ['🎧 Física (Ruído)', '🌡️ Química (Temperatura)']
+)
+
+with tab_fisica:
+  if df_fisica_filtrado.empty:
+    st.warning('Nenhum dado encontrado para os filtros selecionados.')
+  else:
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric('Média', f"{df_fisica_filtrado['DB'].mean():.1f} dB")
+    c2.metric('Mediana', f"{df_fisica_filtrado['DB'].median():.1f} dB")
+    c3.metric('Menor Ruído', f"{df_fisica_filtrado['DB'].min():.1f} dB")
+    c4.metric('Pico de Ruído', f"{df_fisica_filtrado['DB'].max():.1f} dB")
+
+    fig_f = gerar_grafico_otimizado(
+        df_fisica_filtrado, 'DB', 'Evolução de Ruído (dB)', 'Ruído (dB)'
+    )
+
+    evento_f = st.plotly_chart(
+        fig_f,
+        use_container_width=True,
+        on_select='rerun',
+        selection_mode='points',
+    )
+
+    if (
+        evento_f
+        and 'selection' in evento_f
+        and evento_f['selection']['points']
+    ):
+      ponto = evento_f['selection']['points'][0]
+      st.info(
+          f"📍 **Medição Selecionada (Física):**\n\n"
+          f"* **Data / Hora:** `{ponto.get('x')}`\n"
+          f"* **Nível de Ruído:** **{ponto.get('y')} dB**\n"
+          f"* **Área / Grupo:** {ponto.get('hovertext', 'Área selecionada')}"
+      )
+
+    with st.expander('📄 **Ver Tabela de Dados (Física)**', expanded=False):
+      colunas_f = [
+          col
+          for col in ['DATA', 'HORÁRIO', 'LOCAL', 'ÁREA', 'DB MAX - MIN', 'DB']
+          if col in df_fisica_filtrado.columns
+      ]
+      st.dataframe(
+          df_fisica_filtrado[colunas_f],
+          use_container_width=True,
+          hide_index=True,
+      )
+
+with tab_quimica:
+  if df_quimica_filtrado.empty:
+    st.warning('Nenhum dado encontrado para os filtros selecionados.')
+  else:
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric(
+        'Média', f"{df_quimica_filtrado['TEMPERATURA (°C)'].mean():.1f} °C"
+    )
+    c2.metric(
+        'Mediana', f"{df_quimica_filtrado['TEMPERATURA (°C)'].median():.1f} °C"
+    )
+    c3.metric(
+        'Menor Temp.', f"{df_quimica_filtrado['TEMPERATURA (°C)'].min():.1f} °C"
+    )
+    c4.metric(
+        'Maior Temp.', f"{df_quimica_filtrado['TEMPERATURA (°C)'].max():.1f} °C"
+    )
+
+    fig_q = gerar_grafico_otimizado(
+        df_quimica_filtrado,
+        'TEMPERATURA (°C)',
+        'Evolução Térmica (°C)',
+        'Temperatura (°C)',
+    )
+
+    evento_q = st.plotly_chart(
+        fig_q,
+        use_container_width=True,
+        on_select='rerun',
+        selection_mode='points',
+    )
+
+    if (
+        evento_q
+        and 'selection' in evento_q
+        and evento_q['selection']['points']
+    ):
+      ponto = evento_q['selection']['points'][0]
+      st.info(
+          f"📍 **Medição Selecionada (Química):**\n\n"
+          f"* **Data / Hora:** `{ponto.get('x')}`\n"
+          f"* **Temperatura:** **{ponto.get('y')} °C**\n"
+          f"* **Área / Grupo:** {ponto.get('hovertext', 'Área selecionada')}"
+      )
+
+    with st.expander('📄 **Ver Tabela de Dados (Química)**', expanded=False):
+      colunas_q = [
+          col
+          for col in ['DATA', 'HORÁRIO', 'LOCAL', 'ÁREA', 'TEMPERATURA (°C)']
+          if col in df_quimica_filtrado.columns
+      ]
+      st.dataframe(
+          df_quimica_filtrado[colunas_q],
+          use_container_width=True,
+          hide_index=True,
+      )
+
+# =========================================================
+# RODAPÉ DE CRÉDITOS
+# =========================================================
+st.write('---')
+st.markdown(
+    "<div style='text-align: center; color: #888888; padding: 12px;'>"
+    'Feito por <b>Arthur Sartori Cavalcanti</b> com Python 🐍'
+    '</div>',
+    unsafe_allow_html=True,
+)
