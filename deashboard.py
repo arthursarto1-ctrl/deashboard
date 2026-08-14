@@ -225,7 +225,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# BARRA LATERAL (SIDEBAR) - FILTROS E CRÉDITOS
+# BARRA LATERAL (SIDEBAR)
 # =========================================================
 st.sidebar.header('🎛️ Filtros de Mín e Máx')
 
@@ -258,7 +258,7 @@ st.title('📊 Dashboard Senac Ciências')
 st.caption('Feito por **Arthur Sartori Cavalcanti** com Python 🐍')
 
 # =========================================================
-# 1. COMO USAR NO COMPUTADOR E NO CELULAR
+# 1. COMO USAR
 # =========================================================
 with st.expander(
     '💡 **Como usar este painel (Computador e Celular)**', expanded=True
@@ -271,21 +271,19 @@ with st.expander(
         * **Ver Detalhes:** Clique em um ponto individual para ver as informações detalhadas.
         * **Zoom Interativo:** Clique e arraste para dar zoom. Dê **dois cliques** para resetar.
         * **Ocultar Áreas:** Clique no nome de uma área na legenda para exibi-la ou ocultá-la.
-        * **Filtros Rápidos:** Ajuste a barra lateral à esquerda conforme necessário.
         """)
 
   with col_info2:
     st.markdown("""
         #### 📱 No Celular:
         * **Ver Detalhes:** Toque diretamente em um ponto para selecionar a medição individual.
-        * **Navegar pelo Mapa:** Toque nas regiões coloridas do mapa para conferir os blocos.
         * **Menu de Filtros:** Toque no ícone **`>`** no canto superior esquerdo para abrir os filtros.
-        * **Trocar de Matéria:** Alterne entre **🎧 Física** e **🌡️ Química** nas abas ao final da página.
+        * **Trocar de Matéria:** Alterne entre **🎧 Física** e **🌡️ Química** nas abas abaixo.
         """)
 st.write('---')
 
 # =========================================================
-# 2. MAPA INTERATIVO DO CAMPUS
+# 2. MAPA INTERATIVO
 # =========================================================
 st.markdown('### 🗺️ Mapa Interativo do Campus')
 
@@ -454,9 +452,9 @@ except Exception:
 st.write('---')
 
 # =========================================================
-# 3. DESTAQUES AUTOMÁTICOS DA COLETA
+# 3. DESTAQUES DE COLETA (CORRIGIDO SEM CORTAR TEXTO)
 # =========================================================
-st.markdown('### 🏆 Destaques Automáticos da Coleta')
+st.markdown('### 🏆 Destaques de Coleta')
 
 st.markdown('#### 📍 Médias por Área Agrupada')
 ch1, ch2, ch3, ch4 = st.columns(4)
@@ -475,32 +473,37 @@ val_barulhenta = mean_f.max() if not mean_f.empty else 0.0
 area_silenciosa = mean_f.idxmin() if not mean_f.empty else '-'
 val_silenciosa = mean_f.min() if not mean_f.empty else 0.0
 
+# Formatação otimizada para não cortar texto nos cards
 ch1.metric(
-    label='🔥 Área Mais Quente',
-    value=f"{area_quente} • {NOMES_AREAS.get(area_quente, '')}",
-    delta=f"{val_quente:.1f} °C (Média)",
-    delta_color='normal',
+    label=f'🔥 Mais Quente ({area_quente})',
+    value=f'{val_quente:.1f} °C',
+    delta=f"Lugar: {NOMES_AREAS.get(area_quente, '-')}",
+    delta_color='off',
+    help=f"Setor/Lugar: {NOMES_AREAS.get(area_quente, '-')}",
 )
 
 ch2.metric(
-    label='❄️ Área Mais Gelada',
-    value=f"{area_gelada} • {NOMES_AREAS.get(area_gelada, '')}",
-    delta=f"{val_gelada:.1f} °C (Média)",
-    delta_color='inverse',
+    label=f'❄️ Mais Gelada ({area_gelada})',
+    value=f'{val_gelada:.1f} °C',
+    delta=f"Lugar: {NOMES_AREAS.get(area_gelada, '-')}",
+    delta_color='off',
+    help=f"Setor/Lugar: {NOMES_AREAS.get(area_gelada, '-')}",
 )
 
 ch3.metric(
-    label='📢 Área Mais Barulhenta',
-    value=f"{area_barulhenta} • {NOMES_AREAS.get(area_barulhenta, '')}",
-    delta=f"{val_barulhenta:.1f} dB (Média)",
-    delta_color='normal',
+    label=f'📢 Mais Barulhenta ({area_barulhenta})',
+    value=f'{val_barulhenta:.1f} dB',
+    delta=f"Lugar: {NOMES_AREAS.get(area_barulhenta, '-')}",
+    delta_color='off',
+    help=f"Setor/Lugar: {NOMES_AREAS.get(area_barulhenta, '-')}",
 )
 
 ch4.metric(
-    label='🔕 Área Mais Silenciosa',
-    value=f"{area_silenciosa} • {NOMES_AREAS.get(area_silenciosa, '')}",
-    delta=f"{val_silenciosa:.1f} dB (Média)",
-    delta_color='inverse',
+    label=f'🔕 Mais Silenciosa ({area_silenciosa})',
+    value=f'{val_silenciosa:.1f} dB',
+    delta=f"Lugar: {NOMES_AREAS.get(area_silenciosa, '-')}",
+    delta_color='off',
+    help=f"Setor/Lugar: {NOMES_AREAS.get(area_silenciosa, '-')}",
 )
 
 st.markdown('#### ⚡ Medições Extremas Registradas (Picos e Mínimos)')
@@ -508,50 +511,65 @@ ce1, ce2, ce3, ce4 = st.columns(4)
 
 idx_max_t = df_quimica['TEMPERATURA (°C)'].idxmax()
 row_max_t = df_quimica.loc[idx_max_t]
-dt_max_t = row_max_t['DATA_HORA_DT'].strftime('%d/%m/%Y')
+dt_max_t = row_max_t['DATA_HORA_DT'].strftime('%d/%m')
 
 idx_min_t = df_quimica['TEMPERATURA (°C)'].idxmin()
 row_min_t = df_quimica.loc[idx_min_t]
-dt_min_t = row_min_t['DATA_HORA_DT'].strftime('%d/%m/%Y')
+dt_min_t = row_min_t['DATA_HORA_DT'].strftime('%d/%m')
 
 idx_max_db = df_fisica['DB'].idxmax()
 row_max_db = df_fisica.loc[idx_max_db]
-dt_max_db = row_max_db['DATA_HORA_DT'].strftime('%d/%m/%Y')
+dt_max_db = row_max_db['DATA_HORA_DT'].strftime('%d/%m')
 
 idx_min_db = df_fisica['DB'].idxmin()
 row_min_db = df_fisica.loc[idx_min_db]
-dt_min_db = row_min_db['DATA_HORA_DT'].strftime('%d/%m/%Y')
+dt_min_db = row_min_db['DATA_HORA_DT'].strftime('%d/%m')
 
 ce1.metric(
-    label='🌡️ Maior Temp. Absoluta',
-    value=f"{row_max_t['ÁREA']} • {row_max_t['LOCAL'].title()}",
-    delta=f"{row_max_t['TEMPERATURA (°C)']:.1f} °C ({dt_max_t})",
-    delta_color='normal',
+    label=f"🌡️ Maior Temp. ({row_max_t['ÁREA']})",
+    value=f"{row_max_t['TEMPERATURA (°C)']:.1f} °C",
+    delta=f"Local: {row_max_t['LOCAL'].title()} ({dt_max_t})",
+    delta_color='off',
+    help=(
+        f"Área: {row_max_t['ÁREA']} | Local:"
+        f" {row_max_t['LOCAL'].title()} ({dt_max_t})"
+    ),
 )
 
 ce2.metric(
-    label='🧊 Menor Temp. Absoluta',
-    value=f"{row_min_t['ÁREA']} • {row_min_t['LOCAL'].title()}",
-    delta=f"{row_min_t['TEMPERATURA (°C)']:.1f} °C ({dt_min_t})",
-    delta_color='inverse',
+    label=f"🧊 Menor Temp. ({row_min_t['ÁREA']})",
+    value=f"{row_min_t['TEMPERATURA (°C)']:.1f} °C",
+    delta=f"Local: {row_min_t['LOCAL'].title()} ({dt_min_t})",
+    delta_color='off',
+    help=(
+        f"Área: {row_min_t['ÁREA']} | Local:"
+        f" {row_min_t['LOCAL'].title()} ({dt_min_t})"
+    ),
 )
 
 ce3.metric(
-    label='🔊 Maior Pico de Som',
-    value=f"{row_max_db['ÁREA']} • {row_max_db['LOCAL'].title()}",
-    delta=f"{row_max_db['DB']:.1f} dB ({dt_max_db})",
-    delta_color='normal',
+    label=f"🔊 Maior Som ({row_max_db['ÁREA']})",
+    value=f"{row_max_db['DB']:.1f} dB",
+    delta=f"Local: {row_max_db['LOCAL'].title()} ({dt_max_db})",
+    delta_color='off',
+    help=(
+        f"Área: {row_max_db['ÁREA']} | Local:"
+        f" {row_max_db['LOCAL'].title()} ({dt_max_db})"
+    ),
 )
 
 ce4.metric(
-    label='🔕 Menor Ruído Absoluto',
-    value=f"{row_min_db['ÁREA']} • {row_min_db['LOCAL'].title()}",
-    delta=f"{row_min_db['DB']:.1f} dB ({dt_min_db})",
-    delta_color='inverse',
+    label=f"🔕 Menor Som ({row_min_db['ÁREA']})",
+    value=f"{row_min_db['DB']:.1f} dB",
+    delta=f"Local: {row_min_db['LOCAL'].title()} ({dt_min_db})",
+    delta_color='off',
+    help=(
+        f"Área: {row_min_db['ÁREA']} | Local:"
+        f" {row_min_db['LOCAL'].title()} ({dt_min_db})"
+    ),
 )
 
 st.write('---')
-
 # =========================================================
 # 4. FILTROS E CONFIGURAÇÕES DOS GRÁFICOS
 # =========================================================
@@ -630,7 +648,7 @@ df_quimica_filtrado = df_quimica[
 
 
 # -------------------------
-# GERADOR DE GRÁFICOS OTIMIZADO
+# GERADOR DE GRÁFICOS OTIMIZADO (COM CLIQUE INDIVIDUAL)
 # -------------------------
 def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
   df_plot = df.copy()
@@ -670,7 +688,7 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
     fig.update_traces(
         line=dict(width=2, shape='linear'),
         marker=dict(size=9),
-        unselected_marker_opacity=0.2,  # Apaga os outros pontos ao selecionar um
+        unselected_marker_opacity=0.2,
     )
 
   # 2. DISPERSÃO
@@ -699,7 +717,7 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
     fig = px.box(
         df_plot,
         x='ÁREA',
-           y=col_valor,
+        y=col_valor,
         color='ÁREA',
         points='all',
         title=titulo,
@@ -726,12 +744,12 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         template='plotly_dark',
     )
 
-  # Configuração essencial para ISOLAR a seleção por ponto individual
+  # Isolamento do foco e clique individual por ponto
   fig.update_layout(
       margin=dict(l=20, r=20, t=50, b=30),
       height=500 if not is_facet else 650,
-      hovermode='closest',  # <--- Garante foco no ponto individual (sem juntar tudo do mesmo eixo X)
-      clickmode='event+select',  # <--- Habilita o clique individual no ponto
+      hovermode='closest',  # Seleciona apenas o ponto exato sob o cursor
+      clickmode='event+select',  # Permite clicar em um único ponto
       legend=dict(
           orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5
       ),
@@ -786,7 +804,7 @@ with tab_fisica:
           f"📍 **Medição Selecionada (Física):**\n\n"
           f"* **Data / Hora:** `{ponto.get('x')}`\n"
           f"* **Nível de Ruído:** **{ponto.get('y')} dB**\n"
-          f"* **Área / Grupo:** {ponto.get('hovertext', 'Área selecionada')}"
+          f"* **ÁREA:** {ponto.get('hovertext', 'Área selecionada')}"
       )
 
     with st.expander('📄 **Ver Tabela de Dados (Física)**', expanded=False):
@@ -843,7 +861,7 @@ with tab_quimica:
           f"📍 **Medição Selecionada (Química):**\n\n"
           f"* **Data / Hora:** `{ponto.get('x')}`\n"
           f"* **Temperatura:** **{ponto.get('y')} °C**\n"
-          f"* **Área / Grupo:** {ponto.get('hovertext', 'Área selecionada')}"
+          f"* **ÁREA:** {ponto.get('hovertext', 'Área selecionada')}"
       )
 
     with st.expander('📄 **Ver Tabela de Dados (Química)**', expanded=False):
