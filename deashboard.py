@@ -256,25 +256,36 @@ st.title('📊 Dashboard Senac Ciências')
 # =========================================================
 # 1. COMO USAR NO CELULAR E NO COMPUTADOR
 # =========================================================
-with st.expander('📱 💻 **Como usar no Computador e no Celular**', expanded=False):
+st.markdown("""
+    feito por Arthur Sartori Cavalcanti
+
+    com python
+""")
+# =========================================================
+# 1. COMO USAR NO COMPUTADOR E NO CELULAR
+# =========================================================
+with st.expander(
+    '💡 **Como usar este painel (Computador e Celular)**', expanded=True
+):
   col_info1, col_info2 = st.columns(2)
 
   with col_info1:
     st.markdown("""
         #### 💻 No Computador:
         * **Ver Detalhes:** Passe o cursor do mouse sobre os pontos nos gráficos para ver o horário exato e o valor medido.
-        * **Zoom Interativo:** Clique e arraste o mouse para dar zoom. Dê **dois cliques** para resetar.
-        * **Ocultar Áreas:** Clique na legenda para desativar temporariamente uma área.
+        * **Zoom Interativo:** Clique e arraste com o mouse sobre uma área do gráfico para dar zoom. Dê **dois cliques** para voltar ao normal.
+        * **Ocultar Áreas:** Clique no nome de uma área na legenda para ocultá-la ou exibi-la temporariamente.
+        * **Filtros Rápidos:** Acesse o menu lateral à esquerda para ajustar os limites de ruído (dB) e temperatura (°C).
         """)
 
   with col_info2:
     st.markdown("""
         #### 📱 No Celular:
-        * **Acesso Wi-Fi:** Digite no navegador o endereço **Network URL** gerado pelo computador.
-        * **Toque para Detalhar:** Toque nos pontos do gráfico para exibir as medições.
-        * **Filtros Mín/Máx:** Utilize a barra lateral recolhível para filtrar limites de ruído e temperatura.
+        * **Ver Detalhes:** Toque diretamente em qualquer ponto dos gráficos para exibir o valor e o horário exato da medição.
+        * **Navegar pelo Mapa:** Toque nas regiões coloridas do mapa para identificar os prédios e locais do campus.
+        * **Menu de Filtros:** Toque na seta **`>`** (no canto superior esquerdo da tela) para abrir a barra lateral de filtros.
+        * **Trocar de Matéria:** Use as abas ao final da página para alternar entre **🎧 Física** (som) e **🌡️ Química** (temperatura).
         """)
-
 st.write('---')
 
 # =========================================================
