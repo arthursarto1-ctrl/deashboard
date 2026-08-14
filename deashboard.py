@@ -268,7 +268,7 @@ with st.expander(
   with col_info1:
     st.markdown("""
         #### 💻 No Computador:
-        * **Ver Detalhes:** Passe o cursor sobre os pontos ou clique para selecionar.
+        * **Ver Detalhes:** Clique em um ponto individual para ver as informações detalhadas.
         * **Zoom Interativo:** Clique e arraste para dar zoom. Dê **dois cliques** para resetar.
         * **Ocultar Áreas:** Clique no nome de uma área na legenda para exibi-la ou ocultá-la.
         * **Filtros Rápidos:** Ajuste a barra lateral à esquerda conforme necessário.
@@ -277,7 +277,7 @@ with st.expander(
   with col_info2:
     st.markdown("""
         #### 📱 No Celular:
-        * **Ver Detalhes:** Toque em qualquer ponto do gráfico para ver a medição detalhada abaixo dele.
+        * **Ver Detalhes:** Toque diretamente em um ponto para selecionar a medição individual.
         * **Navegar pelo Mapa:** Toque nas regiões coloridas do mapa para conferir os blocos.
         * **Menu de Filtros:** Toque no ícone **`>`** no canto superior esquerdo para abrir os filtros.
         * **Trocar de Matéria:** Alterne entre **🎧 Física** e **🌡️ Química** nas abas ao final da página.
@@ -630,7 +630,7 @@ df_quimica_filtrado = df_quimica[
 
 
 # -------------------------
-# GERADOR DE GRÁFICOS OTIMIZADO (CORRIGIDO)
+# GERADOR DE GRÁFICOS OTIMIZADO
 # -------------------------
 def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
   df_plot = df.copy()
@@ -668,7 +668,9 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         template='plotly_dark',
     )
     fig.update_traces(
-        line=dict(width=2.5, shape='linear'), marker=dict(size=8)
+        line=dict(width=2, shape='linear'),
+        marker=dict(size=9),
+        unselected_marker_opacity=0.2,  # Apaga os outros pontos ao selecionar um
     )
 
   # 2. DISPERSÃO
@@ -690,17 +692,18 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         color_discrete_map=CORES_AREAS,
         template='plotly_dark',
     )
-    fig.update_traces(marker=dict(size=9))
+    fig.update_traces(marker=dict(size=10), unselected_marker_opacity=0.2)
 
   # 3. BOXPLOT
   elif tipo_grafico == '📦 Boxplot (Distribuição por Área)':
     fig = px.box(
         df_plot,
         x='ÁREA',
-        y=col_valor,
+           y=col_valor,
         color='ÁREA',
         points='all',
         title=titulo,
+        labels={col_valor: label_valor},
         color_discrete_map=CORES_AREAS,
         template='plotly_dark',
     )
@@ -723,10 +726,12 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         template='plotly_dark',
     )
 
+  # Configuração essencial para ISOLAR a seleção por ponto individual
   fig.update_layout(
       margin=dict(l=20, r=20, t=50, b=30),
       height=500 if not is_facet else 650,
-      hovermode='closest' if is_facet else 'x unified',
+      hovermode='closest',  # <--- Garante foco no ponto individual (sem juntar tudo do mesmo eixo X)
+      clickmode='event+select',  # <--- Habilita o clique individual no ponto
       legend=dict(
           orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5
       ),
