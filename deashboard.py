@@ -268,8 +268,8 @@ with st.expander(
   with col_info1:
     st.markdown("""
         #### 💻 No Computador:
-        * **Ver Detalhes:** Passe o cursor sobre os pontos ou clique em um ponto para selecionar.
-        * **Zoom Interativo:** Clique e arraste com o mouse para dar zoom. Dê **dois cliques** para resetar.
+        * **Ver Detalhes:** Passe o cursor sobre os pontos ou clique para selecionar.
+        * **Zoom Interativo:** Clique e arraste para dar zoom. Dê **dois cliques** para resetar.
         * **Ocultar Áreas:** Clique no nome de uma área na legenda para exibi-la ou ocultá-la.
         * **Filtros Rápidos:** Ajuste a barra lateral à esquerda conforme necessário.
         """)
@@ -630,7 +630,7 @@ df_quimica_filtrado = df_quimica[
 
 
 # -------------------------
-# GERADOR DE GRÁFICOS OTIMIZADO
+# GERADOR DE GRÁFICOS OTIMIZADO (CORRIGIDO)
 # -------------------------
 def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
   df_plot = df.copy()
@@ -639,6 +639,7 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
   facet_col = 'ÁREA' if is_facet else None
   facet_wrap = 3 if is_facet else 0
 
+  # 1. LINHA
   if tipo_grafico == '📈 Linha (Evolução Temporal)':
     if agrupar_linha_diario:
       df_plot['DATA_DIA'] = df_plot['DATA_HORA_DT'].dt.floor('D')
@@ -670,10 +671,12 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         line=dict(width=2.5, shape='linear'), marker=dict(size=8)
     )
 
+  # 2. DISPERSÃO
   elif tipo_grafico == '📍 Dispersão (Pontos/Scatter)':
     df_plot = df_plot.sort_values(['ÁREA', 'DATA_HORA_DT']).reset_index(
         drop=True
     )
+
     fig = px.scatter(
         df_plot,
         x='DATA_HORA_DT',
@@ -689,6 +692,7 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
     )
     fig.update_traces(marker=dict(size=9))
 
+  # 3. BOXPLOT
   elif tipo_grafico == '📦 Boxplot (Distribuição por Área)':
     fig = px.box(
         df_plot,
@@ -697,5 +701,4 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         color='ÁREA',
         points='all',
         title=titulo,
-        labels={col_valor: label_valor},
-        color_dis
+        labels={col_valo
