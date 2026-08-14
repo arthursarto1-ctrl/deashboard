@@ -225,6 +225,12 @@ st.set_page_config(
 )
 
 # =========================================================
+# TOPO COM CRÉDITOS EM DESTAQUE
+# =========================================================
+st.title('📊 Dashboard Senac Ciências')
+st.info('💻 **Desenvolvido por:** Arthur Sartori Cavalcanti | Python 🐍')
+
+# =========================================================
 # BARRA LATERAL (SIDEBAR)
 # =========================================================
 st.sidebar.header('🎛️ Filtros de Mín e Máx')
@@ -254,9 +260,6 @@ filtro_temp = st.sidebar.slider(
 st.sidebar.markdown('---')
 st.sidebar.caption('💻 Feito por **Arthur Sartori Cavalcanti** com Python 🐍')
 
-st.title('📊 Dashboard Senac Ciências')
-st.caption('Feito por **Arthur Sartori Cavalcanti** com Python 🐍')
-
 # =========================================================
 # 1. COMO USAR
 # =========================================================
@@ -268,7 +271,7 @@ with st.expander(
   with col_info1:
     st.markdown("""
         #### 💻 No Computador:
-        * **Ver Detalhes:** Clique em um ponto individual para ver as informações detalhadas.
+        * **Ver Detalhes:** Clique em um ponto no gráfico para ver o local e valor exato.
         * **Zoom Interativo:** Clique e arraste para dar zoom. Dê **dois cliques** para resetar.
         * **Ocultar Áreas:** Clique no nome de uma área na legenda para exibi-la ou ocultá-la.
         """)
@@ -276,7 +279,7 @@ with st.expander(
   with col_info2:
     st.markdown("""
         #### 📱 No Celular:
-        * **Ver Detalhes:** Toque diretamente em um ponto para selecionar a medição individual.
+        * **Ver Detalhes:** Toque diretamente no ponto para selecionar e exibir a medição e o local.
         * **Menu de Filtros:** Toque no ícone **`>`** no canto superior esquerdo para abrir os filtros.
         * **Trocar de Matéria:** Alterne entre **🎧 Física** e **🌡️ Química** nas abas abaixo.
         """)
@@ -452,7 +455,7 @@ except Exception:
 st.write('---')
 
 # =========================================================
-# 3. DESTAQUES DE COLETA (CORRIGIDO SEM CORTAR TEXTO)
+# 3. DESTAQUES DE COLETA
 # =========================================================
 st.markdown('### 🏆 Destaques de Coleta')
 
@@ -473,7 +476,6 @@ val_barulhenta = mean_f.max() if not mean_f.empty else 0.0
 area_silenciosa = mean_f.idxmin() if not mean_f.empty else '-'
 val_silenciosa = mean_f.min() if not mean_f.empty else 0.0
 
-# Formatação otimizada para não cortar texto nos cards
 ch1.metric(
     label=f'🔥 Mais Quente ({area_quente})',
     value=f'{val_quente:.1f} °C',
@@ -648,10 +650,11 @@ df_quimica_filtrado = df_quimica[
 
 
 # -------------------------
-# GERADOR DE GRÁFICOS OTIMIZADO (COM CLIQUE INDIVIDUAL)
+# GERADOR DE GRÁFICOS (COM EXIBIÇÃO DO LOCAL)
 # -------------------------
 def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
   df_plot = df.copy()
+  df_plot['LOCAL_FORMATADO'] = df_plot['LOCAL'].astype(str).str.title()
 
   is_facet = modo_visao == 'Separado por Área'
   facet_col = 'ÁREA' if is_facet else None
@@ -662,8 +665,13 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
     if agrupar_linha_diario:
       df_plot['DATA_DIA'] = df_plot['DATA_HORA_DT'].dt.floor('D')
       df_plot = (
-          df_plot.groupby(['ÁREA', 'DATA_DIA'], observed=False)[col_valor]
-          .mean()
+          df_plot.groupby(['ÁREA', 'DATA_DIA'], observed=False)
+          .agg({
+              col_valor: 'mean',
+              'LOCAL_FORMATADO': lambda x: ', '.join(
+                  set(x.dropna().str.title())
+              ),
+          })
           .reset_index()
       )
       df_plot = df_plot.rename(columns={'DATA_DIA': 'DATA_HORA_DT'})
@@ -679,9 +687,15 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         color='ÁREA',
         facet_col=facet_col,
         facet_col_wrap=facet_wrap,
+        hover_data={'LOCAL_FORMATADO': True, 'ÁREA': True},
+        custom_data=['LOCAL_FORMATADO', 'ÁREA'],
         markers=True,
         title=titulo,
-        labels={'DATA_HORA_DT': 'Data', col_valor: label_valor},
+        labels={
+            'DATA_HORA_DT': 'Data',
+            col_valor: label_valor,
+            'LOCAL_FORMATADO': 'Local',
+        },
         color_discrete_map=CORES_AREAS,
         template='plotly_dark',
     )
@@ -704,9 +718,15 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         color='ÁREA',
         facet_col=facet_col,
         facet_col_wrap=facet_wrap,
+        hover_data={'LOCAL_FORMATADO': True, 'ÁREA': True},
+        custom_data=['LOCAL_FORMATADO', 'ÁREA'],
         opacity=0.85,
         title=titulo,
-        labels={'DATA_HORA_DT': 'Data e Horário', col_valor: label_valor},
+        labels={
+            'DATA_HORA_DT': 'Data e Horário',
+            col_valor: label_valor,
+            'LOCAL_FORMATADO': 'Local',
+        },
         color_discrete_map=CORES_AREAS,
         template='plotly_dark',
     )
@@ -719,9 +739,11 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         x='ÁREA',
         y=col_valor,
         color='ÁREA',
+        hover_data={'LOCAL_FORMATADO': True},
+        custom_data=['LOCAL_FORMATADO', 'ÁREA'],
         points='all',
         title=titulo,
-        labels={col_valor: label_valor},
+        labels={col_valor: label_valor, 'LOCAL_FORMATADO': 'Local'},
         color_discrete_map=CORES_AREAS,
         template='plotly_dark',
     )
@@ -744,12 +766,11 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         template='plotly_dark',
     )
 
-  # Isolamento do foco e clique individual por ponto
   fig.update_layout(
       margin=dict(l=20, r=20, t=50, b=30),
       height=500 if not is_facet else 650,
-      hovermode='closest',  # Seleciona apenas o ponto exato sob o cursor
-      clickmode='event+select',  # Permite clicar em um único ponto
+      hovermode='closest',
+      clickmode='event+select',
       legend=dict(
           orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5
       ),
@@ -800,11 +821,16 @@ with tab_fisica:
         and evento_f['selection']['points']
     ):
       ponto = evento_f['selection']['points'][0]
+      custom_vals = ponto.get('customdata', ['', ''])
+      local_medicao = (
+          custom_vals[0] if custom_vals else 'Consulte a tabela abaixo'
+      )
+
       st.info(
           f"📍 **Medição Selecionada (Física):**\n\n"
+          f"* **Local da Medição:** **{local_medicao}**\n"
           f"* **Data / Hora:** `{ponto.get('x')}`\n"
-          f"* **Nível de Ruído:** **{ponto.get('y')} dB**\n"
-          f"* **ÁREA:** {ponto.get('hovertext', 'Área selecionada')}"
+          f"* **Nível de Ruído:** **{ponto.get('y')} dB**"
       )
 
     with st.expander('📄 **Ver Tabela de Dados (Física)**', expanded=False):
@@ -857,11 +883,16 @@ with tab_quimica:
         and evento_q['selection']['points']
     ):
       ponto = evento_q['selection']['points'][0]
+      custom_vals = ponto.get('customdata', ['', ''])
+      local_medicao = (
+          custom_vals[0] if custom_vals else 'Consulte a tabela abaixo'
+      )
+
       st.info(
           f"📍 **Medição Selecionada (Química):**\n\n"
+          f"* **Local da Medição:** **{local_medicao}**\n"
           f"* **Data / Hora:** `{ponto.get('x')}`\n"
-          f"* **Temperatura:** **{ponto.get('y')} °C**\n"
-          f"* **ÁREA:** {ponto.get('hovertext', 'Área selecionada')}"
+          f"* **Temperatura:** **{ponto.get('y')} °C**"
       )
 
     with st.expander('📄 **Ver Tabela de Dados (Química)**', expanded=False):
@@ -877,7 +908,7 @@ with tab_quimica:
       )
 
 # =========================================================
-# RODAPÉ DE CRÉDITOS
+# RODAPÉ
 # =========================================================
 st.write('---')
 st.markdown(
