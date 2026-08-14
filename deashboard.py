@@ -10,10 +10,10 @@ from PIL import Image
 # -------------------------
 try:
   locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
-except:
+except Exception:
   try:
     locale.setlocale(locale.LC_TIME, 'pt_BR')
-  except:
+  except Exception:
     pass
 
 # -------------------------
@@ -225,7 +225,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# BARRA LATERAL (SIDEBAR) - FILTROS MÍN E MÁX
+# BARRA LATERAL (SIDEBAR) - FILTROS E CRÉDITOS
 # =========================================================
 st.sidebar.header('🎛️ Filtros de Mín e Máx')
 
@@ -251,16 +251,12 @@ filtro_temp = st.sidebar.slider(
     step=0.5,
 )
 
+st.sidebar.markdown('---')
+st.sidebar.caption('💻 Feito por **Arthur Sartori Cavalcanti** com Python 🐍')
+
 st.title('📊 Dashboard Senac Ciências')
+st.caption('Feito por **Arthur Sartori Cavalcanti** com Python 🐍')
 
-# =========================================================
-# 1. COMO USAR NO CELULAR E NO COMPUTADOR
-# =========================================================
-st.markdown("""
-    feito por Arthur Sartori Cavalcanti
-
-    com python
-""")
 # =========================================================
 # 1. COMO USAR NO COMPUTADOR E NO CELULAR
 # =========================================================
@@ -272,19 +268,19 @@ with st.expander(
   with col_info1:
     st.markdown("""
         #### 💻 No Computador:
-        * **Ver Detalhes:** Passe o cursor do mouse sobre os pontos nos gráficos para ver o horário exato e o valor medido.
-        * **Zoom Interativo:** Clique e arraste com o mouse sobre uma área do gráfico para dar zoom. Dê **dois cliques** para voltar ao normal.
-        * **Ocultar Áreas:** Clique no nome de uma área na legenda para ocultá-la ou exibi-la temporariamente.
-        * **Filtros Rápidos:** Acesse o menu lateral à esquerda para ajustar os limites de ruído (dB) e temperatura (°C).
+        * **Ver Detalhes:** Passe o cursor sobre os pontos ou clique em um ponto para selecionar.
+        * **Zoom Interativo:** Clique e arraste com o mouse para dar zoom. Dê **dois cliques** para resetar.
+        * **Ocultar Áreas:** Clique no nome de uma área na legenda para exibi-la ou ocultá-la.
+        * **Filtros Rápidos:** Ajuste a barra lateral à esquerda conforme necessário.
         """)
 
   with col_info2:
     st.markdown("""
         #### 📱 No Celular:
-        * **Ver Detalhes:** Toque diretamente em qualquer ponto dos gráficos para exibir o valor e o horário exato da medição.
-        * **Navegar pelo Mapa:** Toque nas regiões coloridas do mapa para identificar os prédios e locais do campus.
-        * **Menu de Filtros:** Toque na seta **`>`** (no canto superior esquerdo da tela) para abrir a barra lateral de filtros.
-        * **Trocar de Matéria:** Use as abas ao final da página para alternar entre **🎧 Física** (som) e **🌡️ Química** (temperatura).
+        * **Ver Detalhes:** Toque em qualquer ponto do gráfico para ver a medição detalhada abaixo dele.
+        * **Navegar pelo Mapa:** Toque nas regiões coloridas do mapa para conferir os blocos.
+        * **Menu de Filtros:** Toque no ícone **`>`** no canto superior esquerdo para abrir os filtros.
+        * **Trocar de Matéria:** Alterne entre **🎧 Física** e **🌡️ Química** nas abas ao final da página.
         """)
 st.write('---')
 
@@ -479,7 +475,6 @@ val_barulhenta = mean_f.max() if not mean_f.empty else 0.0
 area_silenciosa = mean_f.idxmin() if not mean_f.empty else '-'
 val_silenciosa = mean_f.min() if not mean_f.empty else 0.0
 
-# Médias
 ch1.metric(
     label='🔥 Área Mais Quente',
     value=f"{area_quente} • {NOMES_AREAS.get(area_quente, '')}",
@@ -490,8 +485,8 @@ ch1.metric(
 ch2.metric(
     label='❄️ Área Mais Gelada',
     value=f"{area_gelada} • {NOMES_AREAS.get(area_gelada, '')}",
-    delta=f"{val_gelada:.1f} °C (Média)",  # Sinal negativo gera 1 seta ↓
-    delta_color='inverse',  # Inverse deixa a cor verde
+    delta=f"{val_gelada:.1f} °C (Média)",
+    delta_color='inverse',
 )
 
 ch3.metric(
@@ -504,14 +499,13 @@ ch3.metric(
 ch4.metric(
     label='🔕 Área Mais Silenciosa',
     value=f"{area_silenciosa} • {NOMES_AREAS.get(area_silenciosa, '')}",
-    delta=f"{val_silenciosa:.1f} dB (Média)",  # Sinal negativo gera 1 seta ↓
-    delta_color='inverse',  # Inverse deixa a cor verde
+    delta=f"{val_silenciosa:.1f} dB (Média)",
+    delta_color='inverse',
 )
 
 st.markdown('#### ⚡ Medições Extremas Registradas (Picos e Mínimos)')
 ce1, ce2, ce3, ce4 = st.columns(4)
 
-# Maior e Menor Temperatura
 idx_max_t = df_quimica['TEMPERATURA (°C)'].idxmax()
 row_max_t = df_quimica.loc[idx_max_t]
 dt_max_t = row_max_t['DATA_HORA_DT'].strftime('%d/%m/%Y')
@@ -520,7 +514,6 @@ idx_min_t = df_quimica['TEMPERATURA (°C)'].idxmin()
 row_min_t = df_quimica.loc[idx_min_t]
 dt_min_t = row_min_t['DATA_HORA_DT'].strftime('%d/%m/%Y')
 
-# Maior e Menor Ruído
 idx_max_db = df_fisica['DB'].idxmax()
 row_max_db = df_fisica.loc[idx_max_db]
 dt_max_db = row_max_db['DATA_HORA_DT'].strftime('%d/%m/%Y')
@@ -539,10 +532,8 @@ ce1.metric(
 ce2.metric(
     label='🧊 Menor Temp. Absoluta',
     value=f"{row_min_t['ÁREA']} • {row_min_t['LOCAL'].title()}",
-    delta=(
-        f"{row_min_t['TEMPERATURA (°C)']:.1f} °C ({dt_min_t})"
-    ),  # Sinal negativo gera 1 seta ↓
-    delta_color='inverse',  # Deixa verde
+    delta=f"{row_min_t['TEMPERATURA (°C)']:.1f} °C ({dt_min_t})",
+    delta_color='inverse',
 )
 
 ce3.metric(
@@ -555,10 +546,8 @@ ce3.metric(
 ce4.metric(
     label='🔕 Menor Ruído Absoluto',
     value=f"{row_min_db['ÁREA']} • {row_min_db['LOCAL'].title()}",
-    delta=(
-        f"{row_min_db['DB']:.1f} dB ({dt_min_db})"
-    ),  # Sinal negativo gera 1 seta ↓
-    delta_color='inverse',  # Deixa verde
+    delta=f"{row_min_db['DB']:.1f} dB ({dt_min_db})",
+    delta_color='inverse',
 )
 
 st.write('---')
@@ -618,13 +607,11 @@ with st.expander('⚙️ **Filtros e Configurações dos Gráficos**', expanded=
         help='Mantenha ativado para simplificar os pontos do mesmo dia.',
     )
 
-# Processar datas selecionadas
 if isinstance(periodo, (list, tuple)) and len(periodo) == 2:
   data_inicio, data_fim = periodo
 else:
   data_inicio, data_fim = min_data, max_data
 
-# Filtragem dos dataframes aplicando filtros do topo e da barra lateral
 df_fisica_filtrado = df_fisica[
     (df_fisica['DATA_HORA_DT'].dt.date >= data_inicio)
     & (df_fisica['DATA_HORA_DT'].dt.date <= data_fim)
@@ -652,7 +639,6 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
   facet_col = 'ÁREA' if is_facet else None
   facet_wrap = 3 if is_facet else 0
 
-  # 1. LINHA
   if tipo_grafico == '📈 Linha (Evolução Temporal)':
     if agrupar_linha_diario:
       df_plot['DATA_DIA'] = df_plot['DATA_HORA_DT'].dt.floor('D')
@@ -681,10 +667,9 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         template='plotly_dark',
     )
     fig.update_traces(
-        line=dict(width=2.5, shape='linear'), marker=dict(size=7)
+        line=dict(width=2.5, shape='linear'), marker=dict(size=8)
     )
 
-  # 2. DISPERSÃO
   elif tipo_grafico == '📍 Dispersão (Pontos/Scatter)':
     df_plot = df_plot.sort_values(['ÁREA', 'DATA_HORA_DT']).reset_index(
         drop=True
@@ -696,15 +681,14 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         color='ÁREA',
         facet_col=facet_col,
         facet_col_wrap=facet_wrap,
-        opacity=0.8,
+        opacity=0.85,
         title=titulo,
         labels={'DATA_HORA_DT': 'Data e Horário', col_valor: label_valor},
         color_discrete_map=CORES_AREAS,
         template='plotly_dark',
     )
-    fig.update_traces(marker=dict(size=8))
+    fig.update_traces(marker=dict(size=9))
 
-  # 3. BOXPLOT
   elif tipo_grafico == '📦 Boxplot (Distribuição por Área)':
     fig = px.box(
         df_plot,
@@ -714,123 +698,4 @@ def gerar_grafico_otimizado(df, col_valor, titulo, label_valor):
         points='all',
         title=titulo,
         labels={col_valor: label_valor},
-        color_discrete_map=CORES_AREAS,
-        template='plotly_dark',
-    )
-    fig.update_traces(boxmean='sd')
-
-  # 4. BARRAS
-  elif tipo_grafico == '📊 Barras (Média por Área)':
-    df_bar = (
-        df_plot.groupby('ÁREA', observed=False)[col_valor].mean().reset_index()
-    )
-    fig = px.bar(
-        df_bar,
-        x='ÁREA',
-        y=col_valor,
-        color='ÁREA',
-        text_auto='.1f',
-        title=f'Média de {label_valor} por Área',
-        labels={col_valor: f'Média de {label_valor}'},
-        color_discrete_map=CORES_AREAS,
-        template='plotly_dark',
-    )
-
-  # ESTILIZAÇÃO FINAL
-  fig.update_layout(
-      margin=dict(l=20, r=20, t=50, b=30),
-      height=500 if not is_facet else 650,
-      hovermode='closest' if is_facet else 'x unified',
-      legend=dict(
-          orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5
-      ),
-  )
-
-  if tipo_grafico in [
-      '📈 Linha (Evolução Temporal)',
-      '📍 Dispersão (Pontos/Scatter)',
-  ]:
-    fig.update_xaxes(
-        tickformat='%d/%m', showgrid=True, gridwidth=0.1, dtick='86400000.0'
-    )
-
-  return fig
-
-
-# =========================================================
-# 5. ABAS DA MATÉRIA (FÍSICA OU QUÍMICA)
-# =========================================================
-tab_fisica, tab_quimica = st.tabs(
-    ['🎧 Física (Ruído)', '🌡️ Química (Temperatura)']
-)
-
-with tab_fisica:
-  if df_fisica_filtrado.empty:
-    st.warning(
-        'Nenhum dado encontrado para os filtros selecionados (área, data ou'
-        ' limites de dB).'
-    )
-  else:
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric('Média', f"{df_fisica_filtrado['DB'].mean():.1f} dB")
-    c2.metric('Mediana', f"{df_fisica_filtrado['DB'].median():.1f} dB")
-    c3.metric('Menor Ruído', f"{df_fisica_filtrado['DB'].min():.1f} dB")
-    c4.metric('Pico de Ruído', f"{df_fisica_filtrado['DB'].max():.1f} dB")
-
-    fig_f = gerar_grafico_otimizado(
-        df_fisica_filtrado, 'DB', 'Evolução de Ruído (dB)', 'Ruído (dB)'
-    )
-    st.plotly_chart(fig_f, use_container_width=True)
-
-    with st.expander('📄 **Ver Tabela de Dados Brutos (Física)**', expanded=False):
-      colunas_f = [
-          col
-          for col in ['DATA', 'HORÁRIO', 'LOCAL', 'ÁREA', 'DB MAX - MIN', 'DB']
-          if col in df_fisica_filtrado.columns
-      ]
-      st.dataframe(
-          df_fisica_filtrado[colunas_f],
-          use_container_width=True,
-          hide_index=True,
-      )
-
-with tab_quimica:
-  if df_quimica_filtrado.empty:
-    st.warning(
-        'Nenhum dado encontrado para os filtros selecionados (área, data ou'
-        ' limites de °C).'
-    )
-  else:
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric(
-        'Média', f"{df_quimica_filtrado['TEMPERATURA (°C)'].mean():.1f} °C"
-    )
-    c2.metric(
-        'Mediana', f"{df_quimica_filtrado['TEMPERATURA (°C)'].median():.1f} °C"
-    )
-    c3.metric(
-        'Menor Temp.', f"{df_quimica_filtrado['TEMPERATURA (°C)'].min():.1f} °C"
-    )
-    c4.metric(
-        'Maior Temp.', f"{df_quimica_filtrado['TEMPERATURA (°C)'].max():.1f} °C"
-    )
-
-    fig_q = gerar_grafico_otimizado(
-        df_quimica_filtrado,
-        'TEMPERATURA (°C)',
-        'Evolução Térmica (°C)',
-        'Temperatura (°C)',
-    )
-    st.plotly_chart(fig_q, use_container_width=True)
-
-    with st.expander('📄 **Ver Tabela de Dados Brutos (Química)**', expanded=False):
-      colunas_q = [
-          col
-          for col in ['DATA', 'HORÁRIO', 'LOCAL', 'ÁREA', 'TEMPERATURA (°C)']
-          if col in df_quimica_filtrado.columns
-      ]
-      st.dataframe(
-          df_quimica_filtrado[colunas_q],
-          use_container_width=True,
-          hide_index=True,
-      )
+        color_dis
